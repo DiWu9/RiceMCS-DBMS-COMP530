@@ -7,64 +7,40 @@ class MyDB_Page {
 
 public:
 
-    MyDB_Page () {
-        refCount = 0;
-        isAnonymous = false;
-        isDirty = false;
-        byte = nullptr;
-    }
+    MyDB_Page ();
 
-    // Trigger if:
+    // Triggered if:
     // 1. Page is anonymous and refCount is 0
     // 2. Page is non-anon, refCount is 0, and evicted from LRU Cache
-    ~MyDB_Page () {
-
-    }
+    ~MyDB_Page ();
 
     // ============== modifiers ==============
 
-    void setPageToAnonymous () {
-        isAnonymous = true;
-    }
+    void setPageToAnonymous ();
 
-    void setPageToDirty () {
-        isDirty = true;
-    }
+    void setPageToDirty ();
 
-    void setByte (char * bytePtr) {
-        byte = bytePtr;
-    }
+    void setByte (char * bytePtr);
 
-    void setByteToNull () {
-        byte = nullptr;
-    }
+    void setByteToNull ();
 
-    void incrementRefCount () {
-        refCount ++;
-    }
+    void incrementRefCount ();
 
-    void decreaseRefCount () {
-        if (refCount > 0) {
-            refCount --;
-        }
-    }
+    void decreaseRefCount ();
 
-    // ============== getters ==============
+    // =============== getters ================
 
-    bool isPageNullPtr () {
-        return byte == nullptr;
-    }
+    bool isPageNullPtr ();
 
-    bool isPageDirty () {
-        return isDirty;
-    }
+    bool isPageDirty ();
 
 private:
 
-    int refCount;
-    bool isAnonymous;
-    bool isDirty; // the page is written
-    char * byte;
+    int refCount;       // number of PageHandle point to this page
+    bool isPinned;      // whether the page is pinned
+    bool isDirty;       // the page is written
+    bool isAnonymous;   // this page is anonymous
+    char * byte;        // pointer to its position at buffer pool
 
 };
 
