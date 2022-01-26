@@ -39,6 +39,8 @@ public:
 private:
 
 	// YOUR CODE HERE
+	MyDB_Page * page;
+	
 };
 
 #endif
