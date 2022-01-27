@@ -28,11 +28,15 @@ public:
 
     void decreaseRefCount ();
 
+    void setLRU (int counter);
+
     // =============== getters ================
 
     bool isPageNullPtr ();
 
     bool isPageDirty ();
+
+    int getLRU ();
 
 private:
 
@@ -41,6 +45,7 @@ private:
     bool isDirty;       // the page is written
     bool isAnonymous;   // this page is anonymous
     char * byte;        // pointer to its position at buffer pool
+    int lruNum;         // the lower the less recently used (unique)
 
 };
 

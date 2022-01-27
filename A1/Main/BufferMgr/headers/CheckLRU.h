@@ -12,39 +12,26 @@ When
 
 using namespace std;
 
-class PageContainer {
-
-public:
-
-    PageContainer ();
-
-    ~PageContainer ();
-
-private:
-
-    MyDB_Page * page;                   // pointer to page object
-    int lruNum;                         // page's LRU number
-
-};
-
 class LRUCache {
 
 public:
 
-    LRUCache ();
+    LRUCache ( int cacheCapacity );
 
     ~LRUCache ();
 
     void evictLRU();
 
-    void addPage();
+    void removePage( MyDB_Page * page );
+
+    void addPage( MyDB_Page * page );
 
 private:
 
     int capacity;                       // the capacity of cache
     int size;                           // the current size of cache
     int counter;                        // the counter that tracks the "time"
-    std::map<int, PageContainer *> map; // lru->PageContainer mapping
+    std::map<int, MyDB_Page *> map;     // lruNum->Page mapping
 
 };
 

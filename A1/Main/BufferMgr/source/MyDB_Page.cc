@@ -14,7 +14,7 @@ MyDB_Page :: MyDB_Page () {
 }
 
 MyDB_Page :: ~ MyDB_Page () {
-
+    
 }
 
 void MyDB_Page :: setPageToAnonymous () {
@@ -33,6 +33,10 @@ void MyDB_Page :: setByteToNull () {
     this->byte = nullptr;
 }
 
+void MyDB_Page :: setLRU (int counter) {
+    this->lruNum = counter;
+}
+
 void MyDB_Page :: incrementRefCount () {
     this->refCount ++;
 }
@@ -47,6 +51,10 @@ bool MyDB_Page :: isPageNullPtr () {
 
 bool MyDB_Page :: isPageDirty () {
     return this->isDirty;
+}
+
+int MyDB_Page :: getLRU () {
+    return this->lruNum;
 }
 
 #endif
