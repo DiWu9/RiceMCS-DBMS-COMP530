@@ -36,6 +36,8 @@ public:
 
     bool isPageDirty ();
 
+    bool isPinned ();
+
     int getLRU ();
 
 private:

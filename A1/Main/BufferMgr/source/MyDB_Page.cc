@@ -53,6 +53,10 @@ bool MyDB_Page :: isPageDirty () {
     return this->isDirty;
 }
 
+bool MyDB_Page :: isPinned () {
+    return this->isPinned;
+}
+
 int MyDB_Page :: getLRU () {
     return this->lruNum;
 }

@@ -31,7 +31,7 @@ private:
     int capacity;                       // the capacity of cache
     int size;                           // the current size of cache
     int counter;                        // the counter that tracks the "time"
-    std::map<int, MyDB_Page *> map;     // lruNum->Page mapping
+    map<int, MyDB_Page *> lruCache;     // lruNum->Page mapping
 
 };
 
