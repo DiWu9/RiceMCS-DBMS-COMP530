@@ -57,8 +57,16 @@ bool MyDB_Page :: isPinned () {
     return this->isPinned;
 }
 
+int MyDB_Page :: getRefCount () {
+    return this->refCount;
+}
+
 int MyDB_Page :: getLRU () {
     return this->lruNum;
+}
+
+char * MyDB_Page :: getByte () {
+    return this->byte;
 }
 
 #endif

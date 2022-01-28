@@ -3,6 +3,7 @@
 #define PAGE_HANDLE_H
 
 #include <memory>
+#include "MyDB_Page.h"
 
 // page handles are basically smart pointers
 // reference: https://www.geeksforgeeks.org/smart-pointers-cpp/
@@ -35,6 +36,7 @@ public:
 	~MyDB_PageHandleBase ();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
+	MyDB_Page * getPage ();
 
 private:
 

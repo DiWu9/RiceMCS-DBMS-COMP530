@@ -38,7 +38,11 @@ public:
 
     bool isPinned ();
 
+    int getRefCount ();
+
     int getLRU ();
+
+    char * getByte ();
 
 private:
 
