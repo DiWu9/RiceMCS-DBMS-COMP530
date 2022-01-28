@@ -22,6 +22,11 @@ void MyDB_PageHandleBase :: wroteBytes () {
 	this->getPage()->setPageToDirty();
 }
 
+MyDB_PageHandleBase :: MyDB_PageHandleBase (MyDB_Page * pagePtr) {
+	this->page = pagePtr;
+	this->page->incrementRefCount();
+}
+
 MyDB_PageHandleBase :: ~MyDB_PageHandleBase () {
 	this->getPage()->decreaseRefCount();
 	// If the number of references to a pinned page goes down to zero, then the page should

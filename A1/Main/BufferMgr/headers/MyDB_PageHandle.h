@@ -36,6 +36,10 @@ public:
 	~MyDB_PageHandleBase ();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
+
+	// constructor
+	MyDB_PageHandleBase (MyDB_Page * pagePtr);
+
 	MyDB_Page * getPage ();
 
 private:
