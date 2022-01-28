@@ -16,4 +16,4 @@ The entire database system has the follow layers (the lower the more basic):
 
 ## A1: Buffer Manager
 
-Description: The buffer manager accerlerate the page lookup by buffering pages in the buffer pool. The buffer pool has LRU eviction policy.
+Description: The buffer manager accerlerates the page lookup by buffering pages in the buffer pool with a lookup table. The buffer pool has LRU eviction policy.
