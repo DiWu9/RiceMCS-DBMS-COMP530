@@ -41,7 +41,7 @@ public:
 private:
 
 	// YOUR CODE HERE
-	MyDB_Page * page;
+	MyDB_Page * page; // not a smart pointer to page because the page may not be killed when ref count = 0
 	
 };
 

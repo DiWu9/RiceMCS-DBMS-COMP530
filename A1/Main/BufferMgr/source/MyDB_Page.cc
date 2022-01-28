@@ -5,7 +5,8 @@
 #include "MyDB_Page.h"
 using namespace std;
 
-MyDB_Page :: MyDB_Page () {
+MyDB_Page :: MyDB_Page (pair<MyDB_TablePtr, long> loc) {
+    this->diskLoc = loc;
     this->refCount = 0;
     this->isPinned = false;
     this->isDirty = false;
@@ -15,10 +16,6 @@ MyDB_Page :: MyDB_Page () {
 
 MyDB_Page :: ~ MyDB_Page () {
     
-}
-
-void MyDB_Page :: setPageToAnonymous () {
-    this->isAnonymous = true;
 }
 
 void MyDB_Page :: setPageToDirty () {
@@ -37,12 +34,24 @@ void MyDB_Page :: setLRU (int counter) {
     this->lruNum = counter;
 }
 
+void MyDB_Page :: pinPage () {
+    this->isPinned = true;
+}
+
+void MyDB_Page :: unpinPage () {
+    this->isPinned = false;
+}
+
 void MyDB_Page :: incrementRefCount () {
     this->refCount ++;
 }
 
 void MyDB_Page :: decreaseRefCount () {
     this->refCount --;
+}
+
+pair<MyDB_TablePtr, long> MyDB_Page :: getLoc () {
+    return this->diskLoc;
 }
 
 bool MyDB_Page :: isPageNullPtr () {
