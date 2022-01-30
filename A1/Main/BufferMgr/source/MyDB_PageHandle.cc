@@ -8,10 +8,10 @@
 void *MyDB_PageHandleBase :: getBytes () {
 	char * byte = this->getPage()->getByte();
 	if (byte == nullptr) {
-		// (implement this)
 		// if the page is not currently in the buffer, then the contents of the page are loaded from 
 		// secondary storage.
 		// can get page's disk location by MyDB_Page :: getLoc ()
+		
 	}
 	else {
 		return this->getPage()->getByte();

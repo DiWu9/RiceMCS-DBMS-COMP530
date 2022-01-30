@@ -22,12 +22,14 @@ LRUCache :: ~LRUCache () {
 Find the unpinned page with the smallest lru number and remove it from the cache
 Note: pinned page will not be evicted from RAM and written back to disk
 */
-void LRUCache :: evictLRU () {
+void * LRUCache :: evictLRU () {
     for (std::map<int,MyDB_Page *>::iterator i=this->lruCache.begin(); i != this->lruCache.end(); i++) {
-        if (!i->second->isPinned()) {
+        MyDB_Page * page = i->second;
+        if (!page->isPinned()) {
+            free(page->getByte());
             this->lruCache.erase(i->first);
             this->size --;
-            break;
+            return page->getByte();
         }
     }
 }
