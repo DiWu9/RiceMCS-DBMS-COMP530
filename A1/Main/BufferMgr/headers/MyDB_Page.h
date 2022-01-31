@@ -33,6 +33,8 @@ public:
 
     void unpinPage();
 
+    void setPageAnonymous();
+
     /* =============== GETTERS ================ */
 
     pair<MyDB_TablePtr, long> getLoc();

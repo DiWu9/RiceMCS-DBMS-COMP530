@@ -71,6 +71,7 @@ void LRUCache ::addPage(MyDB_Page *page)
     this->counter++; // make sure the inserted page has the largest counter (lru number) so far
     page->setLRU(this->counter);
     this->lruCache.insert(std::pair<int, MyDB_Page *>(this->counter, page));
+    this->size++;
 }
 
 /*

@@ -3,177 +3,175 @@
 #define BUFFER_MGR_C
 
 #include "MyDB_BufferManager.h"
+#include "MyDB_Table.h"
+#include "CheckLRU.h"
+#include "MyDB_Page.h"
+#include "MyDB_PageHandle.h"
+
 #include <string>
 
 using namespace std;
 
-MyDB_PageHandle MyDB_BufferManager :: getPage (MyDB_TablePtr whichTable, long i) {
-    if(lookUpTable.find(pair<whichTable,i>) != null){
-        LRU->addPage(lookUpTable.find(pair<whichTable,i>));
-        MyDB_PageHandleBase * handle = new MyDB_PageHandleBase(lookUpTable.find(pair<whichTable,i>));
+MyDB_BufferManager ::MyDB_BufferManager(size_t pageSize, size_t numPages, string tempFile)
+{
+    this->bufferPool = (char *)malloc(pageSize * numPages * sizeof(char));
+    this->cache = new LRUCache(numPages);
+    this->tempFile = tempFile;
+    this->pageNum = numPages;
+    this->pageSize = pageSize;
+    for (size_t offset = 0; offset < numPages; offset++)
+    {
+        this->slotSet.insert(offset);
+    }
+}
 
-    }else {
-        if(slotSet.empty()){
-            MyDB_Page evictedPage = LRU->evictLRU();
-            if(evictedPage -> isPageDirty()){
-                if(evictedPage -> isAnonymous()){
-                    evictedPage -> writeBackAnonPage (anonFile);
-                }else{
-                    evictedPage ->  writeBackPage ();
+MyDB_BufferManager ::~MyDB_BufferManager()
+{
+    for (map<std::pair<MyDB_TablePtr, long>, MyDB_Page *>::iterator i = this->lookUpTable.begin(); i != this->lookUpTable.end(); i++) {
+        MyDB_Page * currPage = i->second;
+        if (currPage->isPageDirty()) {
+            if (currPage->isPageAnonymous()) {
+                currPage->writeBackAnonPage(this->tempFile);
+            }
+            else {
+                currPage->writeBackPage();
+            }
+        }
+        // free (currPage->getByte());
+        currPage->setByte(nullptr);
+    }
+
+
+}
+
+/*
+Get non-anonymous page
+*/
+MyDB_PageHandle MyDB_BufferManager ::getPage(MyDB_TablePtr whichTable, long i)
+{
+    pair<MyDB_TablePtr, long> key = make_pair(whichTable, i);
+    std::map<std::pair<MyDB_TablePtr, long>, MyDB_Page *>::iterator it = this->lookUpTable.find(key);
+    // if it exists in the lookup table
+    if (it != this->lookUpTable.end())
+    {
+        MyDB_Page *page = it->second;
+        this->cache->updatePage(page);
+        shared_ptr<MyDB_PageHandleBase> pageHandle(new MyDB_PageHandleBase(page));
+        return pageHandle;
+    }
+    // if it doesn't exist in the lookup table
+    else
+    {
+        // if the buffer pool is full
+        if (this->slotSet.empty())
+        {
+            MyDB_Page *evictedPage = this->cache->evictLRU();
+            // if no pages are evicted: which could happend when there are no unpinned page in the bp
+            if (evictedPage == nullptr)
+            {
+                cout << "LRUCache error: evict page failed!";
+                abort();
+            }
+            // if the lru page is evicted
+            // remove the pair from lookup table
+            // adding page's offset back to slotset
+            // write page back to disk if it's dirty
+            else
+            {
+                this->lookUpTable.erase(evictedPage->getLoc());
+                this->slotSet.insert(evictedPage->getOffset());
+                if (evictedPage->isPageAnonymous())
+                {
+                    evictedPage->writeBackAnonPage(this->tempFile);
+                }
+                else
+                {
+                    evictedPage->writeBackPage();
                 }
             }
-            slotSet.insert(evictedPage -> getOffset ());
         }
-        auto firstIterator = slotset.begin();
-        slotSet.erase(firstIterator);
-        MyDB_Page *page = new MyDB_Page(pair < whichTable, i >, firstIterator*);
-        lookUpTable.insert({pair<whichTable, i>,page});
-        LRU->addPage(page);
-        page-> setByte(bufferPool + firstIterator*);
-        char byte[size];
-        memcpy(byte, whichTable + i /* Offset */, size /* Length */);
-        //bufferPool 写入
-        MyDB_PageHandleBase * handle = new MyDB_PageHandleBase(page);
-
+        // page point to bufferpool* + offset
+        // add page to lookup table
+        // add page to lru cache
+        // erase the assigned offset from slotset
+        // return pointer to the page
+        auto setIt = this->slotSet.begin();
+        MyDB_Page *newPage = new MyDB_Page(key, this->pageSize, *setIt);
+        newPage->setByte(this->bufferPool + *setIt * pageSize);
+        this->lookUpTable.insert(make_pair(key, newPage));
+        this->cache->addPage(newPage);
+        slotSet.erase(setIt);
+        shared_ptr<MyDB_PageHandleBase> pageHandle(new MyDB_PageHandleBase(newPage));
+        return pageHandle;
     }
-    return handle;
 }
 
-MyDB_PageHandle MyDB_BufferManager :: getPage () {
-
-    if(slotSet.empty()){
-        MyDB_Page evictedPage = LRU->evictLRU();
-        if(evictedPage -> isPageDirty()){
-            if(evictedPage -> isAnonymous()){
-                evictedPage -> writeBackAnonPage (anonFile);
-            }else{
-                evictedPage ->  writeBackPage ();
+/*
+Get Anonymous page
+*/
+MyDB_PageHandle MyDB_BufferManager ::getPage()
+{
+    // if the buffer pool is full
+    if (this->slotSet.empty())
+    {
+        MyDB_Page *evictedPage = this->cache->evictLRU();
+        if (evictedPage == nullptr)
+        {
+            cout << "LRUCache error: evict page failed!";
+            abort();
+        }
+        else
+        {
+            this->lookUpTable.erase(evictedPage->getLoc());
+            this->slotSet.insert(evictedPage->getOffset());
+            if (evictedPage->isPageAnonymous())
+            {
+                evictedPage->writeBackAnonPage(this->tempFile);
+            }
+            else
+            {
+                evictedPage->writeBackPage();
             }
         }
-        slotSet.insert(evictedPage -> getOffset ());
     }
-    auto firstIterator = slotset.begin();
-    slotSet.erase(firstIterator);
-    MyDB_Page *page = new MyDB_Page(pair < nullptr, 0 >, firstIterator*);
-    LRU->addPage(page);
-    page-> setByte(bufferPool + firstIterator*);
-    char byte[size];
-    memcpy(byte, whichTable + i /* Offset */, size /* Length */);
-    //bufferPool 写入
-    MyDB_PageHandleBase * handle = new MyDB_PageHandleBase(page);
-
-
-    return handle;
+    // page point to bufferpool* + offset
+    // set page to anonymous
+    // add page to lru cache
+    // erase the assigned offset from slotset
+    // return pointer to the page
+    auto setIt = this->slotSet.begin();
+    pair<MyDB_TablePtr, long> key = make_pair(nullptr, 0);
+    MyDB_Page *newPage = new MyDB_Page(key, this->pageSize, *setIt);
+    newPage->setPageAnonymous();
+    newPage->setByte(this->bufferPool + *setIt * pageSize);
+    this->cache->addPage(newPage);
+    slotSet.erase(setIt);
+    shared_ptr<MyDB_PageHandleBase> pageHandle(new MyDB_PageHandleBase(newPage));
+    return pageHandle;
 }
 
-MyDB_PageHandle MyDB_BufferManager :: getPinnedPage (MyDB_TablePtr whichTable, long i) {
-    MyDB_PageHandle * handle = new getPage(whichTable, i);
-    pin(handle);
-    return handle;
+MyDB_PageHandle MyDB_BufferManager ::getPinnedPage(MyDB_TablePtr whichTable, long i)
+{
+    MyDB_PageHandle pageHandle = this->getPage(whichTable, i);
+    pageHandle->getPage()->pinPage();
+    return pageHandle;
 }
 
-MyDB_PageHandle MyDB_BufferManager :: getPinnedPage () {
-    MyDB_PageHandle * handle = new getPage();
-    pin(handle);
-    return handle;
+MyDB_PageHandle MyDB_BufferManager ::getPinnedPage()
+{
+    MyDB_PageHandle pageHandle = this->getPage();
+    pageHandle->getPage()->pinPage();
+    return pageHandle;
 }
 
-void MyDB_BufferManager :: unpin (MyDB_PageHandle unpinMe) {
+void MyDB_BufferManager ::unpin(MyDB_PageHandle unpinMe)
+{
     unpinMe->getPage()->unpinPage();
 }
 
-void MyDB_BufferManager :: pin (MyDB_PageHandle pinMe) {
+void MyDB_BufferManager ::pin(MyDB_PageHandle pinMe)
+{
     pinMe->getPage()->pinPage();
 }
 
-MyDB_BufferManager :: MyDB_BufferManager (size_t pageSize, size_t numPages, string tempFile) {
-    size = pageSize;
-    num = numPages;
-    anonFile = tempFile;
-    for (size_t i=0; i<num; ++i){
-        slotSet.insert(i*size);
-    }
-    bufferPool = pageSize * numPages;
-    LRUCache LRU = new LRUCache(int(bufferPool));
-}
-
-MyDB_BufferManager :: ~MyDB_BufferManager () {
-    while(!LRU,isempty()){
-        MyDB_Page evictedPage = LRU->evictLRU();
-        if(evictedPage -> isPageDirty()){
-            if(evictedPage -> isAnonymous()){
-                evictedPage -> writeBackAnonPage (anonFile);
-            }else{
-                evictedPage ->  writeBackPage ();
-            }
-        }
-    }
-}
-
-
-//Page methods:
-//
-//void MyDB_BufferManager :: setPageToDirty (MyDB_Page page){
-//    page -> setPageToDirty ();
-//};
-//
-//void MyDB_BufferManager :: setByte (MyDB_Page page, char * bytePtr){
-//    page -> setByte();
-//};
-//
-//void MyDB_BufferManager :: setByteToNull (MyDB_Page page){
-//    page -> setByteToNull ()
-//};
-//
-//void MyDB_BufferManager :: setLRU (MyDB_Page page, int counter){
-//    page -> setLRU (int counter);
-//};
-//
-//void MyDB_BufferManager :: pinPage (MyDB_Page page){
-//    page -> pinPage ();
-//};
-//
-//void MyDB_BufferManager :: unpinPage (MyDB_Page page){
-//    page -> unpinPage ()
-//};
-//
-//
-//void MyDB_BufferManager :: incrementRefCount (MyDB_Page page){
-//    page -> incrementRefCount ();
-//};
-//
-//void MyDB_BufferManager :: decreaseRefCount (MyDB_Page page){
-//    page -> decreaseRefCount ();
-//};
-//
-//
-//pair<MyDB_TablePtr, long> MyDB_BufferManager :: getLoc (MyDB_Page page) {
-//    return page -> getLoc();
-//}
-//
-//bool MyDB_BufferManager :: isPageNullPtr (MyDB_Page page) {
-//    return page -> isPageNullPtr();
-//}
-//
-//bool MyDB_BufferManager :: isPageDirty (MyDB_Page page) {
-//    return page->isPageDirty();
-//}
-//
-//bool MyDB_BufferManager :: isPinned (MyDB_Page page) {
-//    return page->isPinned();
-//}
-//
-//int MyDB_BufferManager :: getRefCount (MyDB_Page page) {
-//    return page->getRefCount();
-//}
-//
-//int MyDB_BufferManager :: getLRU (MyDB_Page page) {
-//    return page->getLRU();
-//}
-//
-//char * MyDB_BufferManager :: getByte (MyDB_Page page) {
-//    return page->getByte();
-//}
 #endif
-
-
