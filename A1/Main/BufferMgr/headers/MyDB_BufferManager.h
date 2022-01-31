@@ -36,6 +36,8 @@ public:
 	// un-pins the specified page
 	void unpin (MyDB_PageHandle unpinMe);
 
+    void pin (MyDB_PageHandle pinMe);
+
 	// creates an LRU buffer manager... params are as follows:
 	// 1) the size of each page is pageSize 
 	// 2) the number of pages managed by the buffer manager is numPages;
@@ -49,12 +51,89 @@ public:
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS 
 
+
+
 private:
 
 	// YOUR STUFF HERE
+    char * bufferPool;          //size of the bufferPool
+    std::set<size_t> slotSet;      //array to check availability of slot
+    size_t size;                //page size
+    size_t num;                 //page number
+    string anonFile;            //temp file
+    std::map<std::pair<MyDB_TablePtr, long>, MyDB_Page> lookUpTable; //lookup Table
+
 
 };
 
 #endif
-
-
+//
+//Page method:
+//void setPageToDirty (MyDB_Page page);
+//
+//void setByte (MyDB_Page page, char * bytePtr);
+//
+//void setByteToNull (MyDB_Page page);
+//
+//pair<MyDB_TablePtr, long> getLoc (MyDB_Page page);
+//
+//bool isPageNullPtr (MyDB_Page page);
+//
+//bool isPageDirty (MyDB_Page page);
+//
+//bool isPinned (MyDB_Page page);
+//
+//int getRefCount (MyDB_Page page);
+//
+//int getLRU (MyDB_Page page);
+//
+//char * getByte (MyDB_Page page);
+//
+////Page Handle Methods:
+//
+//void setPageToDirty (MyDB_PageHandle handle);
+//
+//void setByte (MyDB_PageHandle handle, char * bytePtr);
+//
+//void setByteToNull (MyDB_PageHandle handle);
+//
+//void incrementRefCount (MyDB_PageHandle handle);
+//
+//void decreaseRefCount (MyDB_PageHandle handle);
+//
+//void setLRU (MyDB_PageHandle handle, int counter);
+//
+//void pinPage (MyDB_PageHandle handle);
+//
+//void wroteBytes(MyDB_PageHandle handle);
+//
+////get
+//
+//pair<MyDB_TablePtr, long> getLoc (MyDB_PageHandle handle);
+//
+//bool isPageNullPtr (MyDB_PageHandle handle);
+//
+//bool isPageDirty (MyDB_PageHandle handle);
+//
+//bool isPinned (MyDB_PageHandle handle);
+//
+//int getRefCount (MyDB_PageHandle handle);
+//
+//int getLRU (MyDB_PageHandle handle);
+//
+//char * getByte (MyDB_PageHandle handle);
+//
+//MyDB_Page * getPage(MyDB_PageHandle handle);
+//
+//
+//void incrementRefCount (MyDB_Page page);
+//
+//void decreaseRefCount (MyDB_Page page);
+//
+//void setLRU (MyDB_Page page, int counter);
+//
+//void pinPage (MyDB_Page page);
+//
+//void unpinPage (MyDB_Page page);
+//
+////get
