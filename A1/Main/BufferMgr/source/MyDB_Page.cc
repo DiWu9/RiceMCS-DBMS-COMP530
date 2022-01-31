@@ -10,7 +10,7 @@
 #include "MyDB_Page.h"
 using namespace std;
 
-MyDB_Page :: MyDB_Page (pair<MyDB_TablePtr, long> loc, int size, int offset) {
+MyDB_Page :: MyDB_Page (pair<MyDB_TablePtr, long> loc, size_t size, size_t offset) {
     this->diskLoc = loc;
     this->offset = offset;
     this->pageSize = size;
@@ -36,7 +36,7 @@ void MyDB_Page :: setByteToNull () {
     this->byte = nullptr;
 }
 
-void MyDB_Page :: setLRU (int counter) {
+void MyDB_Page :: setLRU (size_t counter) {
     this->lruNum = counter;
 }
 
@@ -61,14 +61,14 @@ pair<MyDB_TablePtr, long> MyDB_Page :: getLoc () {
 }
 
 string MyDB_Page :: getStorageLocation () {
-    return this->getLoc().first.getStorageLoc();
+    return this->getLoc().first->getStorageLoc();
 }
 
-int MyDB_Page :: getPageSize () {
+size_t MyDB_Page :: getPageSize () {
     return this->pageSize;
 }
 
-int MyDB_Page :: getOffset () {
+size_t MyDB_Page :: getOffset () {
     return this->offset;
 }
 
@@ -80,15 +80,19 @@ bool MyDB_Page :: isPageDirty () {
     return this->isDirty;
 }
 
-bool MyDB_Page :: isPinned () {
+bool MyDB_Page :: isPagePinned () {
     return this->isPinned;
 }
 
-int MyDB_Page :: getRefCount () {
+bool MyDB_Page :: isPageAnonymous () {
+    return this->isAnonymous;
+}
+
+size_t MyDB_Page :: getRefCount () {
     return this->refCount;
 }
 
-int MyDB_Page :: getLRU () {
+size_t MyDB_Page :: getLRU () {
     return this->lruNum;
 }
 
@@ -97,16 +101,16 @@ char * MyDB_Page :: getByte () {
 }
 
 void MyDB_Page :: writeBackPage () {
-    int fd = open(this->getStorageLocation(), O_WRONLY);
-    lseek(fd, this->getLoc.second * this->pageSize(), SEEK_SET);
-    write(fd, this->getByte, this->pageSize());
+    int fd = open(this->getStorageLocation().c_str(), O_WRONLY);
+    lseek(fd, this->getLoc().second * this->getPageSize(), SEEK_SET);
+    write(fd, this->getByte(), this->getPageSize());
     close(fd);
 }
 
 void MyDB_Page :: writeBackAnonPage (string tempFile) {
-    int fd = open(tempFile, O_WRONLY | O_CREAT);
+    int fd = open(tempFile.c_str(), O_WRONLY | O_CREAT);
     lseek(fd, 0, SEEK_CUR);
-    write(fd, this->getByte(), this->pageSize());
+    write(fd, this->getByte(), this->getPageSize());
     close(fd);
 }
 

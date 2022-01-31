@@ -2,7 +2,7 @@
 #define CHECKLRU_H
 
 /* LRU cache implemented using std::map (ref: https://en.cppreference.com/w/cpp/container/map)
-When 
+When
 */
 #include "MyDB_Page.h"
 
@@ -12,27 +12,29 @@ When
 
 using namespace std;
 
-class LRUCache {
+class LRUCache
+{
 
 public:
+    LRUCache(size_t cacheCapacity);
 
-    LRUCache ( int cacheCapacity );
+    ~LRUCache();
 
-    ~LRUCache ();
+    int getSize();
 
-    void evictLRU();
+    MyDB_Page *evictLRU();
 
-    void removePage( MyDB_Page * page );
+    void removePage(MyDB_Page *page);
 
-    void addPage( MyDB_Page * page );
+    void addPage(MyDB_Page *page);
+
+    void updatePage(MyDB_Page *page);
 
 private:
-
-    int capacity;                       // the capacity of cache
-    int size;                           // the current size of cache
-    int counter;                        // the counter that tracks the "time"
-    map<int, MyDB_Page *> lruCache;     // lruNum->Page mapping
-
+    size_t capacity;                   // the capacity of cache
+    size_t size;                       // the current size of cache
+    size_t counter;                    // the counter that tracks the "time"
+    map<size_t, MyDB_Page *> lruCache; // lruNum->Page mapping
 };
 
 #endif
