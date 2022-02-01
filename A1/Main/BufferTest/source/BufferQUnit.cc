@@ -46,7 +46,7 @@ int main()
 {
 
 	QUnit::UnitTest qunit(cerr, QUnit::verbose);
-
+	/*
 	// UNIT TEST 1: A BIG ONE!!
 	{
 
@@ -139,6 +139,7 @@ int main()
 			temp->wroteBytes();
 		}
 	}
+	*/
 
 	// UNIT TEST 2
 	{
@@ -158,24 +159,27 @@ int main()
 			QUNIT_IS_EQUAL(string(answer), string(bytes));
 		}
 	}
-
+	
+	
 	// UNIT TEST 3: LRU
 	{
 		LRUCache cache(5);
+		MyDB_BufferManager myMgr(64, 16, "tempDSFSD");
+		MyDB_BufferManager * myMgrPtr = &myMgr;
 		MyDB_TablePtr table1 = make_shared<MyDB_Table>("tempTable", "foobar");
 		vector<MyDB_Page> pageList;
 
 		// test normal add
 		for (int i = 0; i < 5; i++)
 		{
-			MyDB_Page page = MyDB_Page(make_pair(table1, i), 0, 0);
+			MyDB_Page page = MyDB_Page(myMgrPtr, make_pair(table1, i), 0, 0);
 			cache.addPage(&page);
 			pageList.push_back(page);
 		}
 		QUNIT_IS_EQUAL((int)cache.getSize(), 5);
 
 		// test add when cache is full
-		MyDB_Page page6 = MyDB_Page(make_pair(table1, 5), 0, 0);
+		MyDB_Page page6 = MyDB_Page(myMgrPtr, make_pair(table1, 5), 0, 0);
 		cache.addPage(&page6);
 		pageList.push_back(page6);
 		QUNIT_IS_EQUAL((int)cache.getSize(), 5);
@@ -188,8 +192,6 @@ int main()
 		cache.removePage(&pageList.at(1));
 		QUNIT_IS_EQUAL((int)cache.getSize(), 4);
 	}
-
-	// UNIT TEST 4: PageHandle
 }
 
 #endif

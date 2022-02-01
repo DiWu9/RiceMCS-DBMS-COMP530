@@ -2,7 +2,6 @@
 #ifndef BUFFER_MGR_H
 #define BUFFER_MGR_H
 
-#include "MyDB_BufferManager.h"
 #include "MyDB_Table.h"
 #include "CheckLRU.h"
 #include "MyDB_Page.h"
@@ -12,7 +11,6 @@
 #include <map>
 
 using namespace std;
-
 class MyDB_BufferManager
 {
 
@@ -56,6 +54,15 @@ public:
 	~MyDB_BufferManager();
 
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
+	void readFromDisk(MyDB_Page *page);
+
+	MyDB_Page *addPage(pair<MyDB_TablePtr, long> loc); // add page from disk
+
+	void addBack(MyDB_Page *page); // add back the page that is originally in disk but get evicted
+
+	void killPage(MyDB_Page *page);
+
+	bool inLookUpTable(pair<MyDB_TablePtr, long> pageKey);
 
 private:
 	// YOUR STUFF HERE

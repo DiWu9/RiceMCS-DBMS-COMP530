@@ -3,8 +3,12 @@
 #define CHECKLRU_C
 
 #include "CheckLRU.h"
+#include "MyDB_Page.h"
 
 #include <map>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 using namespace std;
 
@@ -37,7 +41,6 @@ MyDB_Page *LRUCache ::evictLRU()
         MyDB_Page *page = i->second;
         if (!page->isPagePinned())
         {
-            free(page->getByte());
             this->lruCache.erase(i->first);
             this->size--;
             return page;

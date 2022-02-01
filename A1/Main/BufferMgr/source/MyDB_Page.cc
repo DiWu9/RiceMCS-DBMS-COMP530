@@ -8,10 +8,14 @@
 #include <fcntl.h>
 
 #include "MyDB_Page.h"
+#include "MyDB_BufferManager.h"
+#include "MyDB_Table.h"
+
 using namespace std;
 
-MyDB_Page ::MyDB_Page(pair<MyDB_TablePtr, long> loc, size_t size, size_t offset)
+MyDB_Page ::MyDB_Page(MyDB_BufferManager *bufferManager, pair<MyDB_TablePtr, long> loc, size_t size, size_t offset)
 {
+    this->bm = bufferManager;
     this->diskLoc = loc;
     this->offset = offset;
     this->pageSize = size;
@@ -24,6 +28,11 @@ MyDB_Page ::MyDB_Page(pair<MyDB_TablePtr, long> loc, size_t size, size_t offset)
 
 MyDB_Page ::~MyDB_Page()
 {
+}
+
+void MyDB_Page ::killPage()
+{
+    this->bm->killPage(this);
 }
 
 void MyDB_Page ::setPageToDirty()
@@ -69,6 +78,11 @@ void MyDB_Page ::incrementRefCount()
 void MyDB_Page ::decreaseRefCount()
 {
     this->refCount--;
+}
+
+void MyDB_Page ::setOffset(size_t i)
+{
+    this->offset = i;
 }
 
 pair<MyDB_TablePtr, long> MyDB_Page ::getLoc()
@@ -123,7 +137,14 @@ size_t MyDB_Page ::getLRU()
 
 char *MyDB_Page ::getByte()
 {
-    return this->byte;
+    if (this->byte == nullptr)
+    {
+        this->bm->addBack(this);
+    }
+    else
+    {
+        return this->byte;
+    }
 }
 
 void MyDB_Page ::writeBackPage()

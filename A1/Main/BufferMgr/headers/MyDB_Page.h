@@ -4,16 +4,21 @@
 using namespace std;
 #include "MyDB_Table.h"
 
+
+// https://stackoverflow.com/questions/625799/resolve-build-errors-due-to-circular-dependency-amongst-classes
+class MyDB_BufferManager;
 class MyDB_Page
 {
 
 public:
-    MyDB_Page(pair<MyDB_TablePtr, long> diskLoc, size_t size, size_t offset);
+    MyDB_Page(MyDB_BufferManager *bufferManager, pair<MyDB_TablePtr, long> diskLoc, size_t size, size_t offset);
 
     /* Triggered if:
         1. Page is anonymous and refCount is 0
         2. Page is non-anon, refCount is 0, and evicted from LRU Cache */
     ~MyDB_Page();
+
+    void killPage(); // remove the page from its buffer manager
 
     /* =============== SETTERS ================ */
 
@@ -34,6 +39,8 @@ public:
     void unpinPage();
 
     void setPageAnonymous();
+
+    void setOffset(size_t i);
 
     /* =============== GETTERS ================ */
 
@@ -68,10 +75,13 @@ public:
     void writeBackAnonPage(string tempFile); /* called if dirty and anonymous page */
 
 private:
+
+    MyDB_BufferManager *bm;
+
     /* the real disk location where the page is come from,
        anonymous page has pair <nullptr, 0> */
     pair<MyDB_TablePtr, long> diskLoc;
-
+    
     size_t offset;    /* position relative to head of buffer pool */
     size_t pageSize;  /* page size                                */
     size_t refCount;  /* number of PageHandle point to this page  */
