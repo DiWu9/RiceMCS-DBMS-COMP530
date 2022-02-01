@@ -41,6 +41,7 @@ MyDB_Page *LRUCache ::evictLRU()
         MyDB_Page *page = i->second;
         if (!page->isPagePinned())
         {
+            page->killPage();
             this->lruCache.erase(i->first);
             this->size--;
             return page;

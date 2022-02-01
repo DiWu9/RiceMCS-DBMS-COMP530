@@ -3,8 +3,11 @@
 #define PAGE_HANDLE_C
 
 #include <memory>
+#include <iostream>
 #include "MyDB_Page.h"
 #include "MyDB_PageHandle.h"
+
+using namespace std;
 
 void *MyDB_PageHandleBase ::getBytes()
 {
@@ -35,6 +38,7 @@ MyDB_PageHandleBase ::~MyDB_PageHandleBase()
 	if (this->getPage()->isPageAnonymous())
 	{
 		this->getPage()->killPage();
+		this->getPage()->evictFromLRU();
 	}
 }
 

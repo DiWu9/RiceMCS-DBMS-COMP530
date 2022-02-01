@@ -35,6 +35,11 @@ void MyDB_Page ::killPage()
     this->bm->killPage(this);
 }
 
+void MyDB_Page ::evictFromLRU()
+{
+    this->bm->removeFromLRU(this);
+}
+
 void MyDB_Page ::setPageToDirty()
 {
     this->isDirty = true;
@@ -135,11 +140,12 @@ size_t MyDB_Page ::getLRU()
     return this->lruNum;
 }
 
-char *MyDB_Page ::getByte()
+void *MyDB_Page ::getByte()
 {
     if (this->byte == nullptr)
     {
         this->bm->addBack(this);
+        return this->byte;
     }
     else
     {
@@ -149,8 +155,8 @@ char *MyDB_Page ::getByte()
 
 void MyDB_Page ::writeBackPage()
 {
-    int fd = open(this->getStorageLocation().c_str(), O_WRONLY);
-    lseek(fd, this->getLoc().second * this->getPageSize(), SEEK_SET);
+    int fd = open(this->getStorageLocation().c_str(), O_WRONLY | O_CREAT);
+    lseek(fd, this->diskLoc.second * this->pageSize, SEEK_SET);
     write(fd, this->getByte(), this->getPageSize());
     close(fd);
 }
@@ -158,9 +164,19 @@ void MyDB_Page ::writeBackPage()
 void MyDB_Page ::writeBackAnonPage(string tempFile)
 {
     int fd = open(tempFile.c_str(), O_WRONLY | O_CREAT);
-    lseek(fd, 0, SEEK_CUR);
+    lseek(fd, this->diskLoc.second * this->pageSize, SEEK_SET);
     write(fd, this->getByte(), this->getPageSize());
     close(fd);
+}
+
+void MyDB_Page ::printByte()
+{
+    char *byte = (char *)this->byte;
+    for (size_t i = 0; i < this->pageSize; i++)
+    {
+        cout << byte[i];
+    }
+    cout << endl;
 }
 
 #endif

@@ -9,6 +9,7 @@
 
 #include <set>
 #include <map>
+#include <vector>
 
 using namespace std;
 class MyDB_BufferManager
@@ -64,15 +65,20 @@ public:
 
 	bool inLookUpTable(pair<MyDB_TablePtr, long> pageKey);
 
+	void removeFromLRU (MyDB_Page *page);
+
+	void printSlots ();
+
 private:
 	// YOUR STUFF HERE
-	char *bufferPool;											  // size of the bufferPool
+	char *bufferPool;											  // bufferPool
 	set<size_t> slotSet;										  // array to check availability of slot
 	size_t pageSize;											  // page size
 	size_t pageNum;												  // page number
 	string tempFile;											  // temp file
 	map<std::pair<MyDB_TablePtr, long>, MyDB_Page *> lookUpTable; // lookup Table
 	LRUCache *cache;											  // cache with lru eviction policy
+	size_t anonymousPageNum;									  // current number of anonymous page created so far
 };
 
 #endif

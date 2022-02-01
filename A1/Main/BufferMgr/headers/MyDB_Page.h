@@ -4,7 +4,6 @@
 using namespace std;
 #include "MyDB_Table.h"
 
-
 // https://stackoverflow.com/questions/625799/resolve-build-errors-due-to-circular-dependency-amongst-classes
 class MyDB_BufferManager;
 class MyDB_Page
@@ -13,12 +12,11 @@ class MyDB_Page
 public:
     MyDB_Page(MyDB_BufferManager *bufferManager, pair<MyDB_TablePtr, long> diskLoc, size_t size, size_t offset);
 
-    /* Triggered if:
-        1. Page is anonymous and refCount is 0
-        2. Page is non-anon, refCount is 0, and evicted from LRU Cache */
     ~MyDB_Page();
 
     void killPage(); // remove the page from its buffer manager
+
+    void evictFromLRU(); // evict the page from buffer manager's LRU cache
 
     /* =============== SETTERS ================ */
 
@@ -64,7 +62,7 @@ public:
 
     size_t getLRU();
 
-    char *getByte();
+    void *getByte();
 
     /* =============== WRITEBACKS ================
     when a page is evicted from the LRU or the buffer pool is destructed,
@@ -74,22 +72,23 @@ public:
 
     void writeBackAnonPage(string tempFile); /* called if dirty and anonymous page */
 
-private:
+    void printByte();
 
+private:
     MyDB_BufferManager *bm;
 
     /* the real disk location where the page is come from,
-       anonymous page has pair <nullptr, 0> */
+       anonymous page has pair <nullptr, ithAnonPage> */
     pair<MyDB_TablePtr, long> diskLoc;
-    
-    size_t offset;    /* position relative to head of buffer pool */
-    size_t pageSize;  /* page size                                */
-    size_t refCount;  /* number of PageHandle point to this page  */
-    bool isPinned;    /* whether the page is pinned               */
-    bool isDirty;     /* the page is written                      */
-    bool isAnonymous; /* this page is anonymous                   */
-    char *byte;       /* pointer to its position at buffer pool   */
-    size_t lruNum;    /* the lower the less recently used (unique)*/
+
+    size_t offset;           /* position relative to head of buffer pool */
+    size_t pageSize;         /* page size                                */
+    size_t refCount;         /* number of PageHandle point to this page  */
+    bool isPinned;           /* whether the page is pinned               */
+    bool isDirty;            /* the page is written                      */
+    bool isAnonymous;        /* this page is anonymous                   */
+    void *byte;              /* pointer to its position at buffer pool   */
+    size_t lruNum;           /* the lower the less recently used (unique)*/
 };
 
 #endif
