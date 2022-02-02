@@ -84,6 +84,7 @@ MyDB_PageHandle MyDB_BufferManager ::getPage(MyDB_TablePtr whichTable, long i)
             this->cache->evictLRU();
         }
         MyDB_Page *newPage = this->addPage(key);
+        //newPage->printByte();
         shared_ptr<MyDB_PageHandleBase> pageHandle(new MyDB_PageHandleBase(newPage));
         return pageHandle;
     }
@@ -138,7 +139,7 @@ void MyDB_BufferManager ::readFromDisk(MyDB_Page *page)
         pair<MyDB_TablePtr, long> loc = page->getLoc();
         MyDB_TablePtr whichTable = loc.first;
         long i = loc.second;
-        int fd = open(whichTable->getStorageLoc().c_str(), O_RDONLY);
+        int fd = open(whichTable->getStorageLoc().c_str(), O_CREAT | O_RDWR | O_FSYNC, 0666);
         if (fd == -1)
         {
             cout << "Failed to read file. " << endl;
@@ -154,7 +155,7 @@ void MyDB_BufferManager ::readFromDisk(MyDB_Page *page)
 
 void MyDB_BufferManager ::readFromTemp(MyDB_Page *page)
 {
-    int fd = open(this->tempFile.c_str(), O_RDONLY);
+    int fd = open(this->tempFile.c_str(), O_CREAT | O_RDWR | O_FSYNC, 0666);
     if (fd == -1)
     {
         cout << "Failed to read file. " << endl;

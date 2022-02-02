@@ -170,7 +170,7 @@ void *MyDB_Page ::getByteHeadForRead()
 
 void MyDB_Page ::writeBackPage()
 {
-    int fd = open(this->getStorageLocation().c_str(), O_WRONLY | O_CREAT);
+    int fd = open(this->getStorageLocation().c_str(), O_CREAT | O_RDWR | O_FSYNC, 0666);
     lseek(fd, this->diskLoc.second * this->pageSize, SEEK_SET);
     write(fd, this->getByteHeadForRead(), this->getPageSize());
     close(fd);
@@ -179,7 +179,7 @@ void MyDB_Page ::writeBackPage()
 
 void MyDB_Page ::writeBackAnonPage(string tempFile)
 {
-    int fd = open(tempFile.c_str(), O_WRONLY | O_CREAT);
+    int fd = open(tempFile.c_str(), O_CREAT | O_RDWR | O_FSYNC, 0666);
     lseek(fd, this->getLoc().second * this->getPageSize(), SEEK_SET);
     write(fd, this->getByteHeadForRead(), this->getPageSize());
     close(fd);
