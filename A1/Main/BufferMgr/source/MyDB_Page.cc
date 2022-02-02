@@ -45,6 +45,11 @@ void MyDB_Page ::setPageToDirty()
     this->isDirty = true;
 }
 
+void MyDB_Page ::setPageToClean()
+{
+    this->isDirty = false;
+}
+
 void MyDB_Page ::setByte(char *bytePtr)
 {
     this->byte = bytePtr;
@@ -68,6 +73,7 @@ void MyDB_Page ::pinPage()
 void MyDB_Page ::unpinPage()
 {
     this->isPinned = false;
+    this->bm->updateLRU(this);
 }
 
 void MyDB_Page ::setPageAnonymous()
@@ -149,28 +155,40 @@ void *MyDB_Page ::getByte()
     }
     else
     {
+        if (!this->isPagePinned()) 
+        {
+            this->bm->updateLRU(this);
+        }
         return this->byte;
     }
+}
+
+void *MyDB_Page ::getByteHeadForRead() 
+{
+    return this->byte;
 }
 
 void MyDB_Page ::writeBackPage()
 {
     int fd = open(this->getStorageLocation().c_str(), O_WRONLY | O_CREAT);
     lseek(fd, this->diskLoc.second * this->pageSize, SEEK_SET);
-    write(fd, this->getByte(), this->getPageSize());
+    write(fd, this->getByteHeadForRead(), this->getPageSize());
     close(fd);
+    this->setPageToClean();
 }
 
 void MyDB_Page ::writeBackAnonPage(string tempFile)
 {
     int fd = open(tempFile.c_str(), O_WRONLY | O_CREAT);
-    lseek(fd, this->diskLoc.second * this->pageSize, SEEK_SET);
-    write(fd, this->getByte(), this->getPageSize());
+    lseek(fd, this->getLoc().second * this->getPageSize(), SEEK_SET);
+    write(fd, this->getByteHeadForRead(), this->getPageSize());
     close(fd);
+    this->setPageToClean();
 }
 
 void MyDB_Page ::printByte()
 {
+    cout << "Print page's byte: ";
     char *byte = (char *)this->byte;
     for (size_t i = 0; i < this->pageSize; i++)
     {

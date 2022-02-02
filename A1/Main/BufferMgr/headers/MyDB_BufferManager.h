@@ -57,6 +57,8 @@ public:
 	// FEEL FREE TO ADD ADDITIONAL PUBLIC METHODS
 	void readFromDisk(MyDB_Page *page);
 
+	void readFromTemp(MyDB_Page *page);
+
 	MyDB_Page *addPage(pair<MyDB_TablePtr, long> loc); // add page from disk
 
 	void addBack(MyDB_Page *page); // add back the page that is originally in disk but get evicted
@@ -68,6 +70,8 @@ public:
 	void removeFromLRU (MyDB_Page *page);
 
 	void printSlots ();
+
+	void updateLRU (MyDB_Page * page);
 
 private:
 	// YOUR STUFF HERE

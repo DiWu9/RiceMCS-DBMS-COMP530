@@ -22,6 +22,8 @@ public:
 
     void setPageToDirty();
 
+    void setPageToClean();
+
     void setByte(char *bytePtr);
 
     void setByteToNull();
@@ -63,6 +65,8 @@ public:
     size_t getLRU();
 
     void *getByte();
+
+    void *getByteHeadForRead();
 
     /* =============== WRITEBACKS ================
     when a page is evicted from the LRU or the buffer pool is destructed,

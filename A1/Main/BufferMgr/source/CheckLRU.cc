@@ -15,7 +15,6 @@ using namespace std;
 LRUCache ::LRUCache(size_t cacheCapacity)
 {
     this->capacity = cacheCapacity;
-    this->size = 0;
     this->counter = 0;
 }
 
@@ -25,27 +24,34 @@ LRUCache ::~LRUCache()
 
 int LRUCache ::getSize()
 {
-    return this->size;
+    return this->lruCache.size();
 }
 
 /*
 Find the unpinned page with the smallest lru number and remove it from the cache
 Note: pinned page will not be evicted from RAM and written back to disk
 
-Return the offset of the page being evicted; -1 if no page is evicted.
+Return the page being evicted; nullptr if no page is evicted.
 */
 MyDB_Page *LRUCache ::evictLRU()
 {
-    for (std::map<size_t, MyDB_Page *>::iterator i = this->lruCache.begin(); i != this->lruCache.end(); i++)
+    if (this->capacity == this->getSize())
     {
-        MyDB_Page *page = i->second;
-        if (!page->isPagePinned())
+        for (std::map<size_t, MyDB_Page *>::iterator i = this->lruCache.begin(); i != this->lruCache.end(); i++)
         {
-            page->killPage();
-            this->lruCache.erase(i->first);
-            this->size--;
-            return page;
+            MyDB_Page *page = i->second;
+            if (!page->isPagePinned())
+            {
+                page->killPage();
+                this->lruCache.erase(i->first);
+                return page;
+            }
         }
+        cout << "Error: nothing can be evicted from LRU." << endl;
+    }
+    else 
+    {
+        cout << "Error: evict is called when cache still has space." << this->getSize() << endl;
     }
     return nullptr;
 }
@@ -59,8 +65,9 @@ void LRUCache ::removePage(MyDB_Page *page)
     if (this->lruCache.find(page->getLRU()) != this->lruCache.end())
     {
         this->lruCache.erase(page->getLRU());
-        this->size--;
+        return;
     }
+    return;
 }
 
 /*
@@ -68,14 +75,13 @@ Add a specific associated with the largest lru number in the cache
 */
 void LRUCache ::addPage(MyDB_Page *page)
 {
-    if (this->size == this->capacity)
+    if (this->capacity == this->getSize())
     {
         this->evictLRU();
     }
     this->counter++; // make sure the inserted page has the largest counter (lru number) so far
     page->setLRU(this->counter);
     this->lruCache.insert(std::pair<int, MyDB_Page *>(this->counter, page));
-    this->size++;
 }
 
 /*
@@ -85,6 +91,14 @@ void LRUCache ::updatePage(MyDB_Page *page)
 {
     this->removePage(page);
     this->addPage(page);
+}
+
+void LRUCache ::printCache()
+{
+    for (std::map<size_t, MyDB_Page *>::iterator i = this->lruCache.begin(); i != this->lruCache.end(); i++)
+    {
+        cout << "LRU Num: " << i->first << "; Page: " << i->second->getOffset() << endl;
+    }
 }
 
 #endif

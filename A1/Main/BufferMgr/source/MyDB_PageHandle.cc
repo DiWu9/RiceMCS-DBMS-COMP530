@@ -16,6 +16,7 @@ void *MyDB_PageHandleBase ::getBytes()
 
 void MyDB_PageHandleBase ::wroteBytes()
 {
+	// cout << this->getPage()->getLoc().second << endl;
 	this->getPage()->setPageToDirty();
 }
 

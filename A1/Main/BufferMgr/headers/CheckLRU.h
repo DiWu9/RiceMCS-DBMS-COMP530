@@ -25,15 +25,17 @@ public:
 
     void removePage(MyDB_Page *page);
 
-    void addPage(MyDB_Page *page);
-
     void updatePage(MyDB_Page *page);
 
+    void printCache ();
+
 private:
+
     size_t capacity;                   // the capacity of cache
-    size_t size;                       // the current size of cache
     size_t counter;                    // the counter that tracks the "time"
     map<size_t, MyDB_Page *> lruCache; // lruNum->Page mapping
+
+    void addPage(MyDB_Page *page);
 };
 
 #endif

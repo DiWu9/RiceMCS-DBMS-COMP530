@@ -20,7 +20,7 @@ using namespace std;
 
 MyDB_BufferManager ::MyDB_BufferManager(size_t pageSize, size_t numPages, string tempFile)
 {
-    this->bufferPool = (char *) malloc ((pageSize * numPages + 1) * sizeof(char));
+    this->bufferPool = (char *)malloc((pageSize * numPages + 1) * sizeof(char));
     memset(bufferPool, '0', pageSize * numPages);
     for (size_t offset = 0; offset < numPages; offset++)
     {
@@ -52,7 +52,7 @@ MyDB_BufferManager ::~MyDB_BufferManager()
         }
         currPage->setByte(nullptr);
     }
-    
+
     free(this->bufferPool);
 }
 
@@ -67,7 +67,11 @@ MyDB_PageHandle MyDB_BufferManager ::getPage(MyDB_TablePtr whichTable, long i)
     if (it != this->lookUpTable.end())
     {
         MyDB_Page *page = it->second;
-        this->cache->updatePage(page);
+        page->unpinPage();
+        if (page->getByteHeadForRead() == nullptr)
+        {
+            this->addBack(page);
+        }
         shared_ptr<MyDB_PageHandleBase> pageHandle(new MyDB_PageHandleBase(page));
         return pageHandle;
     }
@@ -93,7 +97,7 @@ MyDB_PageHandle MyDB_BufferManager ::getPage()
     // if the buffer pool is full
     if (this->slotSet.empty())
     {
-        this->cache->evictLRU();
+        MyDB_Page *page = this->cache->evictLRU();
     }
     pair<MyDB_TablePtr, long> key = make_pair(nullptr, this->anonymousPageNum);
     this->anonymousPageNum++;
@@ -104,14 +108,14 @@ MyDB_PageHandle MyDB_BufferManager ::getPage()
 
 MyDB_PageHandle MyDB_BufferManager ::getPinnedPage(MyDB_TablePtr whichTable, long i)
 {
-    MyDB_PageHandle pageHandle = this->getPage(whichTable, i);
+    shared_ptr<MyDB_PageHandleBase> pageHandle = this->getPage(whichTable, i);
     pageHandle->getPage()->pinPage();
     return pageHandle;
 }
 
 MyDB_PageHandle MyDB_BufferManager ::getPinnedPage()
 {
-    MyDB_PageHandle pageHandle = this->getPage();
+    shared_ptr<MyDB_PageHandleBase> pageHandle = this->getPage();
     pageHandle->getPage()->pinPage();
     return pageHandle;
 }
@@ -130,7 +134,7 @@ void MyDB_BufferManager ::readFromDisk(MyDB_Page *page)
 {
     if (!page->isPageAnonymous())
     {
-        void *dest = page->getByte();
+        void *dest = page->getByteHeadForRead();
         pair<MyDB_TablePtr, long> loc = page->getLoc();
         MyDB_TablePtr whichTable = loc.first;
         long i = loc.second;
@@ -146,6 +150,18 @@ void MyDB_BufferManager ::readFromDisk(MyDB_Page *page)
         }
         close(fd);
     }
+}
+
+void MyDB_BufferManager ::readFromTemp(MyDB_Page *page)
+{
+    int fd = open(this->tempFile.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        cout << "Failed to read file. " << endl;
+    }
+    lseek(fd, this->pageSize * page->getLoc().second, SEEK_SET);
+    read(fd, page->getByteHeadForRead(), page->getPageSize());
+    close(fd);
 }
 
 /*
@@ -167,7 +183,7 @@ MyDB_Page *MyDB_BufferManager ::addPage(pair<MyDB_TablePtr, long> loc)
     {
         newPage->setPageAnonymous();
     }
-    this->cache->addPage(newPage);
+    this->updateLRU(newPage);
     this->slotSet.erase(setIt);
     return newPage;
 }
@@ -176,25 +192,28 @@ void MyDB_BufferManager ::addBack(MyDB_Page *page)
 {
     if (this->slotSet.empty())
     {
-        MyDB_Page *evictedPage = this->cache->evictLRU();
-        this->killPage(evictedPage);
+        this->cache->evictLRU();
     }
     auto setIt = this->slotSet.begin();
     size_t offset = *setIt;
     page->setOffset(offset);
     page->setByte(&this->bufferPool[pageSize * offset]);
-    this->readFromDisk(page);
     if (!page->isPageAnonymous())
     {
+        this->readFromDisk(page);
         this->lookUpTable.insert(make_pair(page->getLoc(), page));
     }
-    this->cache->addPage(page);
+    else
+    {
+        this->readFromTemp(page);
+    }
+    this->updateLRU(page);
     slotSet.erase(setIt);
 }
 
 void MyDB_BufferManager ::killPage(MyDB_Page *page)
 {
-    if (page->getByte() != nullptr)
+    if (page->getByteHeadForRead() != nullptr)
     {
         this->slotSet.insert(page->getOffset());
         if (page->isPageDirty())
@@ -208,7 +227,7 @@ void MyDB_BufferManager ::killPage(MyDB_Page *page)
                 page->writeBackPage();
             }
         }
-        memset(page->getByte(), '0', page->getPageSize());
+        memset(page->getByteHeadForRead(), '0', page->getPageSize());
         page->setByte(nullptr);
     }
 
@@ -224,18 +243,24 @@ bool MyDB_BufferManager ::inLookUpTable(pair<MyDB_TablePtr, long> pageKey)
     return it != this->lookUpTable.end();
 }
 
-void MyDB_BufferManager ::removeFromLRU (MyDB_Page *page)
+void MyDB_BufferManager ::removeFromLRU(MyDB_Page *page)
 {
     this->cache->removePage(page);
 }
 
-void MyDB_BufferManager ::printSlots () {
+void MyDB_BufferManager ::printSlots()
+{
     cout << "offset slots remaining: " << endl;
     for (auto it = this->slotSet.begin(); it != this->slotSet.end(); it++)
     {
         cout << ' ' << *it;
     }
     cout << endl;
+}
+
+void MyDB_BufferManager ::updateLRU(MyDB_Page *page)
+{
+    this->cache->updatePage(page);
 }
 
 #endif
