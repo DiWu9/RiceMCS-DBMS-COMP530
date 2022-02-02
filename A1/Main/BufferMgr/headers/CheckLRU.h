@@ -23,6 +23,8 @@ public:
 
     MyDB_Page *evictLRU();
 
+    void addPage(MyDB_Page *page);
+
     void removePage(MyDB_Page *page);
 
     void updatePage(MyDB_Page *page);
@@ -35,7 +37,6 @@ private:
     size_t counter;                    // the counter that tracks the "time"
     map<size_t, MyDB_Page *> lruCache; // lruNum->Page mapping
 
-    void addPage(MyDB_Page *page);
 };
 
 #endif

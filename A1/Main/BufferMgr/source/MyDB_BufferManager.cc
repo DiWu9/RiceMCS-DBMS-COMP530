@@ -159,8 +159,11 @@ void MyDB_BufferManager ::readFromTemp(MyDB_Page *page)
     {
         cout << "Failed to read file. " << endl;
     }
-    lseek(fd, this->pageSize * page->getLoc().second, SEEK_SET);
-    read(fd, page->getByteHeadForRead(), page->getPageSize());
+    else
+    {
+        lseek(fd, this->pageSize * page->getLoc().second, SEEK_SET);
+        read(fd, page->getByteHeadForRead(), page->getPageSize());
+    }
     close(fd);
 }
 

@@ -35,24 +35,17 @@ Return the page being evicted; nullptr if no page is evicted.
 */
 MyDB_Page *LRUCache ::evictLRU()
 {
-    if (this->capacity == this->getSize())
+    for (std::map<size_t, MyDB_Page *>::iterator i = this->lruCache.begin(); i != this->lruCache.end(); i++)
     {
-        for (std::map<size_t, MyDB_Page *>::iterator i = this->lruCache.begin(); i != this->lruCache.end(); i++)
+        MyDB_Page *page = i->second;
+        if (!page->isPagePinned())
         {
-            MyDB_Page *page = i->second;
-            if (!page->isPagePinned())
-            {
-                page->killPage();
-                this->lruCache.erase(i->first);
-                return page;
-            }
+            page->killPage();
+            this->lruCache.erase(i->first);
+            return page;
         }
-        cout << "Error: nothing can be evicted from LRU." << endl;
     }
-    else 
-    {
-        cout << "Error: evict is called when cache still has space." << this->getSize() << endl;
-    }
+    cout << "Error: nothing can be evicted from LRU." << endl;
     return nullptr;
 }
 
