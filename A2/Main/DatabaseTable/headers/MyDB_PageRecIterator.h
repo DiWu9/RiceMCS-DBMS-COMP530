@@ -1,8 +1,8 @@
 #ifndef PAGE_ITER_H
 #define PAGE_ITER_H
 
-// other sources need to be included?
 #include <memory>
+
 #include "MyDB_PageReaderWriter.h"
 #include "MyDB_RecordIterator.h"
 #include "MyDB_Record.h"
