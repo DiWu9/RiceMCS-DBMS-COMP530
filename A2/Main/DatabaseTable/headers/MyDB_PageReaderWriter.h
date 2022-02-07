@@ -3,13 +3,23 @@
 #define PAGE_RW_H
 
 #include "MyDB_PageType.h"
+#include "MyDB_PageHandle.h"
 #include "MyDB_TableReaderWriter.h"
+
+using namespace std;
+
+struct PageHeader {
+	MyDB_PageType pageType;
+	size_t offsetToEnd;
+	char recs[0];
+};
 
 class MyDB_PageReaderWriter {
 
 public:
 
 	// ANY OTHER METHODS YOU WANT HERE
+	MyDB_PageReaderWriter(MyDB_BufferManagerPtr mgrPtr, MyDB_PageHandle pageHandle);
 
 	// empties out the contents of this page, so that it has no records in it
 	// the type of the page is set to MyDB_PageType :: RegularPage
@@ -34,6 +44,12 @@ public:
 private:
 
 	// ANYTHING ELSE YOU WANT HERE
+	friend class MyDB_PageRecIterator;
+
+	MyDB_BufferManagerPtr myMgr;
+	MyDB_PageHandle myPage;
+	PageHeader* myPageHead;
+	size_t pageSize;
 };
 
 #endif

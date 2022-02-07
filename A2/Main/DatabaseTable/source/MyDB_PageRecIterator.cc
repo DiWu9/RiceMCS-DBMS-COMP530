@@ -1,25 +1,30 @@
-#ifndef REC_ITER_C
-#define REC_ITER_C
+#ifndef PAGE_ITER_C
+#define PAGE_ITER_C
 
+#include "MyDB_Record.h"
+#include "MyDB_PageReaderWriter.h"
+#include "MyDB_RecordIterator.h"
 #include "MyDB_PageRecIterator.h"
 
-
-void MyDB_PageRecIterator :: getNext()  {
-    void *pos = bytesConsumed + (char *) myPage->getBytes ();
-    void *nextPos = myRec->fromBinary (pos);
-    bytesConsumed += ((char *) nextPos) - ((char *) pos);
+// return an itrator over this page... each time returnVal->next () is
+// called, the resulting record will be placed into the record pointed to
+// by iterateIntoMe
+void MyDB_PageRecIterator :: getNext() {
+    PageHeader* pageHead = this->myPageReaderWriter.myPageHead;
+    this->rec->fromBinary(& pageHead->recs[0] + this->offset);
+    this->offset += this->rec->getBinarySize();
 }
 
-bool MyDB_PageRecIterator :: hasNext()  {
-    return bytesConsumed < pageSize;
+bool MyDB_PageRecIterator :: hasNext() {
+    PageHeader* pageHead = this->myPageReaderWriter.myPageHead;
+    return this->offset + this->rec->getBinarySize() <= pageHead->offsetToEnd;
 }
 
-MyDB_PageRecIterator :: MyDB_PageRecIterator(MyDB_PagePtr page, size_t byte, size_t size) {
-    myPage = page;
-    bytesConsumed = byte;
-    pageSize = size;
-};
+MyDB_PageRecIterator :: MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe) : myPageReaderWriter(pageReaderWriterPtr) {
+    this->rec = iterateIntoMe;
+    this->offset = 0;
+}
 
-MyDB_PageRecIterator :: ~MyDB_PageRecIterator(){}
+MyDB_PageRecIterator :: ~MyDB_PageRecIterator() {}
 
 #endif

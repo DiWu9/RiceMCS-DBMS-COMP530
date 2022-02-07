@@ -1,33 +1,34 @@
-#ifndef REC_ITER_H
-#define REC_ITER_H
+#ifndef PAGE_ITER_H
+#define PAGE_ITER_H
 
-//other sources need to be included?
+// other sources need to be included?
 #include <memory>
-#include "MyDB_Page.h"
+#include "MyDB_PageReaderWriter.h"
+#include "MyDB_RecordIterator.h"
+#include "MyDB_Record.h"
+
 using namespace std;
 
-
 class MyDB_PageRecIterator;
-typedef shared_ptr <MyDB_RecordIterator> MyDB_RecordIteratorPtr;
+typedef shared_ptr <MyDB_PageRecIterator> MyDB_PageRecIteratorPtr;
 
-class MyDB_PageRecIterator : public virtual MyDB_RecordIterator{
+class MyDB_PageRecIterator : public MyDB_RecordIterator {
 
 public:
-
-    //add bytes consumed rec
+    // add bytes consumed rec
     void getNext();
 
-    //whether there is next rec
+    // whether there is next rec
     bool hasNext();
 
-    // destructor and contructor
-    MyDB_PageRecIterator (MyDB_PagePtr page, size_t byte, size_t size) {};
-
-    ~MyDB_PageRecIterator () {};
+    MyDB_PageRecIterator(MyDB_PageReaderWriter& pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe);
+    ~MyDB_PageRecIterator();
 
 private:
-    MyDB_PagePtr myPage;
-    size_t byteConsumed;
-    size_t pageSize;
+
+    MyDB_PageReaderWriter& myPageReaderWriter;
+    MyDB_RecordPtr rec;
+    size_t offset;
 
 };
+#endif
