@@ -3,6 +3,7 @@
 #define PAGE_RW_C
 
 #include "MyDB_PageHandle.h"
+#include "MyDB_Record.h"
 #include "MyDB_PageRecIterator.h"
 #include "MyDB_PageReaderWriter.h"
 
@@ -14,6 +15,8 @@ MyDB_PageReaderWriter :: MyDB_PageReaderWriter(MyDB_BufferManagerPtr mgrPtr, MyD
 	this->myPageHead->pageType = MyDB_PageType::RegularPage;
 	this->myPageHead->offsetToEnd = 0;
 }
+
+MyDB_PageReaderWriter :: ~MyDB_PageReaderWriter () {}
 
 // empties out the contents of this page, so that it has no records in it
 // the type of the page is set to MyDB_PageType :: RegularPage
@@ -46,10 +49,11 @@ void MyDB_PageReaderWriter :: setType (MyDB_PageType toMe) {
 // there is not enough space on the page; otherwise, return true
 bool MyDB_PageReaderWriter :: append (MyDB_RecordPtr appendMe) {
 	char * toAppend = & this->myPageHead->recs[0] + this->myPageHead->offsetToEnd;
-	if (toAppend + appendMe->getBinarySize() <= (char *) this->myPage->getBytes() + this->pageSize) {
+	size_t appendSize = appendMe->getBinarySize();
+	if (toAppend + appendSize <= (char *) this->myPage->getBytes() + this->pageSize) {
 		appendMe->toBinary(toAppend);
 		this->myPage->wroteBytes();
-		this->myPageHead->offsetToEnd += appendMe->getBinarySize();
+		this->myPageHead->offsetToEnd += appendSize;
 		return true;
 	}
 	return false;

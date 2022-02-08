@@ -6,18 +6,18 @@
 #include "MyDB_RecordIterator.h"
 #include "MyDB_PageRecIterator.h"
 
-// return an itrator over this page... each time returnVal->next () is
-// called, the resulting record will be placed into the record pointed to
-// by iterateIntoMe
+// each time returnVal->next () is called, the resulting record will be placed into the record pointed to by iterateIntoMe
 void MyDB_PageRecIterator :: getNext() {
     PageHeader* pageHead = this->myPageReaderWriter.myPageHead;
+    size_t recSize = this->rec->getBinarySize();
     this->rec->fromBinary(& pageHead->recs[0] + this->offset);
-    this->offset += this->rec->getBinarySize();
+    this->offset += recSize;
 }
 
 bool MyDB_PageRecIterator :: hasNext() {
-    PageHeader* pageHead = this->myPageReaderWriter.myPageHead;
-    return this->offset + this->rec->getBinarySize() <= pageHead->offsetToEnd;
+    cout << "Offset: " << this->offset << endl;
+    cout << "Page size: " << this->myPageReaderWriter.pageSize << endl;
+    return this->offset + this->rec->getBinarySize() <= this->myPageReaderWriter.pageSize;
 }
 
 MyDB_PageRecIterator :: MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe) : myPageReaderWriter(pageReaderWriterPtr) {

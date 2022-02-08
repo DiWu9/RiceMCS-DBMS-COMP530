@@ -4,13 +4,14 @@
 
 #include <memory>
 #include "MyDB_BufferManager.h"
-#include "MyDB_Record.h"
 #include "MyDB_RecordIterator.h"
 #include "MyDB_Table.h"
+#include "MyDB_Record.h"
+#include "MyDB_PageReaderWriter.h"
 
 // create a smart pointer for the catalog
 using namespace std;
-class MyDB_PageReaderWriter;
+
 class MyDB_TableReaderWriter;
 typedef shared_ptr <MyDB_TableReaderWriter> MyDB_TableReaderWriterPtr;
 
@@ -50,6 +51,12 @@ public:
 private:
 
 	// ANYTHING YOU NEED HERE
+	friend class MyDB_TableRecIterator;
+
+	MyDB_TablePtr myTable;
+	MyDB_BufferManagerPtr myMgr;
+	MyDB_PageReaderWriterPtr lastPage;
+
 };
 
 #endif

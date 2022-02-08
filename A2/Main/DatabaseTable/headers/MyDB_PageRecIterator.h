@@ -15,14 +15,13 @@ typedef shared_ptr <MyDB_PageRecIterator> MyDB_PageRecIteratorPtr;
 class MyDB_PageRecIterator : public MyDB_RecordIterator {
 
 public:
-    // add bytes consumed rec
-    void getNext();
 
-    // whether there is next rec
+    void getNext();
+    
     bool hasNext();
 
-    MyDB_PageRecIterator(MyDB_PageReaderWriter& pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe);
-    ~MyDB_PageRecIterator();
+    MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe);
+    ~MyDB_PageRecIterator ();
 
 private:
 

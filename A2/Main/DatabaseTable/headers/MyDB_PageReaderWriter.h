@@ -4,7 +4,9 @@
 
 #include "MyDB_PageType.h"
 #include "MyDB_PageHandle.h"
-#include "MyDB_TableReaderWriter.h"
+#include "MyDB_BufferManager.h"
+#include "MyDB_RecordIterator.h"
+#include "MyDB_Record.h"
 
 using namespace std;
 
@@ -14,12 +16,17 @@ struct PageHeader {
 	char recs[0];
 };
 
+class MyDB_PageReaderWriter;
+typedef shared_ptr <MyDB_PageReaderWriter> MyDB_PageReaderWriterPtr;
+
 class MyDB_PageReaderWriter {
 
 public:
 
 	// ANY OTHER METHODS YOU WANT HERE
-	MyDB_PageReaderWriter(MyDB_BufferManagerPtr mgrPtr, MyDB_PageHandle pageHandle);
+	MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_PageHandle pageHandle);
+
+	~MyDB_PageReaderWriter ();
 
 	// empties out the contents of this page, so that it has no records in it
 	// the type of the page is set to MyDB_PageType :: RegularPage

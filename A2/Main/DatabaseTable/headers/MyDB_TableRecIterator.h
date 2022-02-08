@@ -4,6 +4,8 @@
 #include <memory>
 
 #include "MyDB_RecordIterator.h"
+#include "MyDB_PageRecIterator.h"
+#include "MyDB_TableReaderWriter.h"
 
 using namespace std;
 
@@ -18,10 +20,15 @@ public:
     
     bool hasNext();
 
-    MyDB_TableRecIterator();
-    ~MyDB_TableRecIterator();
+    MyDB_TableRecIterator (MyDB_TableReaderWriter& tableReaderWriterPtr, MyDB_RecordPtr iterateIntoMe);
+    ~MyDB_TableRecIterator ();
 
 private:
+
+    MyDB_TableReaderWriter& myTableReaderWriter;
+    MyDB_RecordPtr rec;
+    MyDB_RecordIteratorPtr pageIt;
+    size_t ithPage;
 
 };
 
