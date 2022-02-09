@@ -26,7 +26,7 @@ bool MyDB_TableRecIterator :: hasNext() {
         int i = this->ithPage + 1;
         size_t indexOfLastPage = this->myTableReaderWriter.getIndexOfLastPage();
         while (i <= indexOfLastPage) {
-            MyDB_PageRecIterator tempIt = this->myTableReaderWriter.getIthPageIterator(this->rec, i);
+            MyDB_RecordIteratorPtr tempIt = this->myTableReaderWriter.getIthPageIterator(this->rec, i);
             if (tempIt->hasNext()) {
                 return true;
             }
