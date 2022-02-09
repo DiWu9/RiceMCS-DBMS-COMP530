@@ -19,8 +19,21 @@ void MyDB_TableRecIterator :: getNext() {
 }
 
 bool MyDB_TableRecIterator :: hasNext() {
-    size_t indexOfLastPage = this->myTableReaderWriter.getIndexOfLastPage();
-    return this->ithPage < indexOfLastPage || (this->ithPage == indexOfLastPage && this->pageIt->hasNext());
+    if (this->pageIt->hasNext()) {
+        return true;
+    }
+    else {
+        int i = this->ithPage + 1;
+        size_t indexOfLastPage = this->myTableReaderWriter.getIndexOfLastPage();
+        while (i <= indexOfLastPage) {
+            MyDB_PageRecIterator tempIt = this->myTableReaderWriter.getIthPageIterator(this->rec, i);
+            if (tempIt->hasNext()) {
+                return true;
+            }
+            i++;
+        }
+        return false;
+    }
 }
 
 MyDB_TableRecIterator :: MyDB_TableRecIterator (MyDB_TableReaderWriter& tableReaderWriterPtr, MyDB_RecordPtr iterateIntoMe) : myTableReaderWriter(tableReaderWriterPtr) {
