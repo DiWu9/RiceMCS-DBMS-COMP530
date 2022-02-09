@@ -24,9 +24,11 @@ class MyDB_PageReaderWriter {
 public:
 
 	// ANY OTHER METHODS YOU WANT HERE
-	MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_PageHandle pageHandle);
+	MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_TablePtr tablePtr, long ithPage);
 
 	~MyDB_PageReaderWriter ();
+
+	size_t getOffsetToEnd ();
 
 	// empties out the contents of this page, so that it has no records in it
 	// the type of the page is set to MyDB_PageType :: RegularPage

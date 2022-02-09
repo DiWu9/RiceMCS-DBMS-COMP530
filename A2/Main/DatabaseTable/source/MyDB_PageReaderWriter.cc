@@ -7,13 +7,14 @@
 #include "MyDB_PageRecIterator.h"
 #include "MyDB_PageReaderWriter.h"
 
-MyDB_PageReaderWriter :: MyDB_PageReaderWriter(MyDB_BufferManagerPtr mgrPtr, MyDB_PageHandle pageHandle) {
+using namespace std;
+
+
+MyDB_PageReaderWriter :: MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_TablePtr tablePtr, long ithPage) {
 	this->myMgr = mgrPtr;
-	this->myPage = pageHandle;
+	this->myPage = this->myMgr->getPage(tablePtr, ithPage);
 	this->pageSize = this->myMgr->getPageSize();
 	this->myPageHead = (PageHeader *) this->myPage->getBytes();
-	this->myPageHead->pageType = MyDB_PageType::RegularPage;
-	this->myPageHead->offsetToEnd = 0;
 }
 
 MyDB_PageReaderWriter :: ~MyDB_PageReaderWriter () {}
@@ -21,8 +22,13 @@ MyDB_PageReaderWriter :: ~MyDB_PageReaderWriter () {}
 // empties out the contents of this page, so that it has no records in it
 // the type of the page is set to MyDB_PageType :: RegularPage
 void MyDB_PageReaderWriter :: clear () {
-	memset(this->myPage->getBytes(), '0', this->pageSize);
 	this->setType(MyDB_PageType :: RegularPage);
+	this->myPageHead->offsetToEnd = 0;
+	this->myPage->wroteBytes();
+}
+
+size_t MyDB_PageReaderWriter :: getOffsetToEnd () {
+	return this->myPageHead->offsetToEnd;
 }
 
 // gets the type of this page... this is just a value from an ennumeration
@@ -43,6 +49,7 @@ MyDB_RecordIteratorPtr MyDB_PageReaderWriter :: getIterator (MyDB_RecordPtr iter
 // sets the type of the page
 void MyDB_PageReaderWriter :: setType (MyDB_PageType toMe) {
 	this->myPageHead->pageType = toMe;
+	this->myPage->wroteBytes();
 }
 
 // appends a record to this page... return false is the append fails because
@@ -52,8 +59,8 @@ bool MyDB_PageReaderWriter :: append (MyDB_RecordPtr appendMe) {
 	size_t appendSize = appendMe->getBinarySize();
 	if (toAppend + appendSize <= (char *) this->myPage->getBytes() + this->pageSize) {
 		appendMe->toBinary(toAppend);
-		this->myPage->wroteBytes();
 		this->myPageHead->offsetToEnd += appendSize;
+		this->myPage->wroteBytes();
 		return true;
 	}
 	return false;

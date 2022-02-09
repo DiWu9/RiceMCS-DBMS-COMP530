@@ -5,6 +5,7 @@
 #include <memory>
 #include "MyDB_BufferManager.h"
 #include "MyDB_RecordIterator.h"
+#include "MyDB_PageRecIterator.h"
 #include "MyDB_Table.h"
 #include "MyDB_Record.h"
 #include "MyDB_PageReaderWriter.h"
@@ -20,6 +21,11 @@ class MyDB_TableReaderWriter {
 public:
 
 	// ANYTHING ELSE YOU NEED HERE
+	void printPages ();
+
+	MyDB_RecordIteratorPtr getIthPageIterator (MyDB_RecordPtr iterateIntoMe, size_t i);
+
+	size_t getIndexOfLastPage ();
 
 	// create a table reader/writer for the specified table, using the specified
 	// buffer manager

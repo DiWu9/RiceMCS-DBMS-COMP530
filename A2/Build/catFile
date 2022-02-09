@@ -4,10 +4,10 @@
 |supplier.comment.type|string|
 |supplier.fileName|supplier.bin|
 |supplier.fileType|heap|
-|supplier.lastPage|1|
+|supplier.lastPage|1683|
 |supplier.name.type|string|
 |supplier.nationkey.type|int|
-|supplier.numTuples|0|
+|supplier.numTuples|137292|
 |supplier.phone.type|string|
 |supplier.rootLocation|-1|
 |supplier.sortAtt|none|

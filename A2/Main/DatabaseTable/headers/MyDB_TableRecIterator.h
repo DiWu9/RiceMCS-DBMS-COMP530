@@ -3,8 +3,8 @@
 
 #include <memory>
 
+#include "MyDB_Record.h"
 #include "MyDB_RecordIterator.h"
-#include "MyDB_PageRecIterator.h"
 #include "MyDB_TableReaderWriter.h"
 
 using namespace std;
