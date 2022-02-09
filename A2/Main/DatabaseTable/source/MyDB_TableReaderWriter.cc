@@ -15,9 +15,11 @@ using namespace std;
 
 void MyDB_TableReaderWriter :: printPages () {
 	cout << "=========== Print Pages ===============" << endl;
-	for (int i = 0; i < this->myTable->lastPage(); i++) {
-		MyDB_PageReaderWriterPtr page = make_shared <MyDB_PageReaderWriter>(this->myMgr, this->myTable, i);
-		cout << "Page "  << i << " offset: " << page->getOffsetToEnd() << endl;
+	//MyDB_PageReaderWriterPtr page = make_shared <MyDB_PageReaderWriter>(this->myMgr, this->myTable, this->myTable->lastPage());
+	for (int i = 0; i <= this->myTable->lastPage(); i++) {
+		MyDB_PageReaderWriterPtr page = make_shared <MyDB_PageReaderWriter>(this->myMgr, this->myTable, i); // this line seems to changing page's data
+		cout << "last page offset: " << this->last().getOffsetToEnd() << endl;
+		//cout << "Page "  << i << " offset: " << page->getOffsetToEnd() << endl;
 	}
 }
 
@@ -82,11 +84,9 @@ void MyDB_TableReaderWriter :: loadFromTextFile (string fromMe) {
 	toRead.open(fromMe);
 	string myText;
 	MyDB_RecordPtr currRec = this->getEmptyRecord();
-	int i = 1;
 	while (getline(toRead, myText)) {
 		currRec->fromString(myText);
 		this->append(currRec);
-		i++;
 	}
 	toRead.close();
 }

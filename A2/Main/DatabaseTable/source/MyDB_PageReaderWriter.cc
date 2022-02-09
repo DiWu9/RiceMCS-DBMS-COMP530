@@ -57,9 +57,11 @@ void MyDB_PageReaderWriter :: setType (MyDB_PageType toMe) {
 bool MyDB_PageReaderWriter :: append (MyDB_RecordPtr appendMe) {
 	char * toAppend = & this->myPageHead->recs[0] + this->myPageHead->offsetToEnd;
 	size_t appendSize = appendMe->getBinarySize();
+	//cout << "rec size: " << appendSize << endl;
 	if (toAppend + appendSize <= (char *) this->myPage->getBytes() + this->pageSize) {
-		appendMe->toBinary(toAppend);
-		this->myPageHead->offsetToEnd += appendSize;
+		void* newPos = appendMe->toBinary(toAppend);
+		this->myPageHead->offsetToEnd += ((char*) newPos - (char*) toAppend);
+		//cout << "offset: " << this->myPageHead->offsetToEnd << endl;
 		this->myPage->wroteBytes();
 		return true;
 	}
