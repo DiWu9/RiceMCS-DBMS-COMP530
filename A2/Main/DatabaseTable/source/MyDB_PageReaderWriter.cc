@@ -6,14 +6,14 @@
 #include "MyDB_Record.h"
 #include "MyDB_PageRecIterator.h"
 #include "MyDB_PageReaderWriter.h"
+#include "MyDB_TableReaderWriter.h"
 
 using namespace std;
 
 
-MyDB_PageReaderWriter :: MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_TablePtr tablePtr, long ithPage) {
-	this->myMgr = mgrPtr;
-	this->myPage = this->myMgr->getPage(tablePtr, ithPage);
-	this->pageSize = this->myMgr->getPageSize();
+MyDB_PageReaderWriter :: MyDB_PageReaderWriter (MyDB_TableReaderWriter& tableReaderWriterPtr, long ithPage) : myTableReaderWriter(tableReaderWriterPtr) {
+	this->pageSize = this->myTableReaderWriter.myMgr->getPageSize();
+	this->myPage = this->myTableReaderWriter.myMgr->getPage(this->myTableReaderWriter.myTable, ithPage);
 	this->myPageHead = (PageHeader *) this->myPage->getBytes();
 }
 
@@ -22,7 +22,7 @@ MyDB_PageReaderWriter :: ~MyDB_PageReaderWriter () {}
 // empties out the contents of this page, so that it has no records in it
 // the type of the page is set to MyDB_PageType :: RegularPage
 void MyDB_PageReaderWriter :: clear () {
-	this->setType(MyDB_PageType :: RegularPage);
+	this->myPageHead->pageType = MyDB_PageType::RegularPage;
 	this->myPageHead->offsetToEnd = 0;
 	this->myPage->wroteBytes();
 }
@@ -55,12 +55,12 @@ void MyDB_PageReaderWriter :: setType (MyDB_PageType toMe) {
 // appends a record to this page... return false is the append fails because
 // there is not enough space on the page; otherwise, return true
 bool MyDB_PageReaderWriter :: append (MyDB_RecordPtr appendMe) {
-	char * toAppend = & this->myPageHead->recs[0] + this->myPageHead->offsetToEnd;
+	void * toAppend = & this->myPageHead->recs[0] + this->myPageHead->offsetToEnd;
 	size_t appendSize = appendMe->getBinarySize();
 	//cout << "rec size: " << appendSize << endl;
-	if (toAppend + appendSize <= (char *) this->myPage->getBytes() + this->pageSize) {
+	if ((char *) toAppend + appendSize < (char *) this->myPage->getBytes() + this->pageSize) {
 		void* newPos = appendMe->toBinary(toAppend);
-		this->myPageHead->offsetToEnd += ((char*) newPos - (char*) toAppend);
+		this->myPageHead->offsetToEnd += ((char *) newPos - (char *) toAppend);
 		//cout << "offset: " << this->myPageHead->offsetToEnd << endl;
 		this->myPage->wroteBytes();
 		return true;

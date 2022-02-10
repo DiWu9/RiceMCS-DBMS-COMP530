@@ -11,12 +11,16 @@ using namespace std;
 // each time returnVal->next () is called, the resulting record will be placed into the record pointed to by iterateIntoMe
 void MyDB_PageRecIterator :: getNext() {
     PageHeader* pageHead = this->myPageReaderWriter.myPageHead;
-    void *pos = &pageHead->recs[this->offset];
+    void *pos = &pageHead->recs[0] + this->offset;
     void *nextPos = this->rec->fromBinary(pos);
     this->offset += ((char *) nextPos) - ((char *) pos);
+    //cout << "page it's offset: " << this->offset << endl;
+    //cout << "page's offset to end: " << this->myPageReaderWriter.myPageHead->offsetToEnd << endl;
+    //cout << "---------------------------------------" << endl;
 }
 
 bool MyDB_PageRecIterator :: hasNext() {
+    //cout << "page it's offset " << this->offset << endl;
     return this->offset < this->myPageReaderWriter.myPageHead->offsetToEnd;
 }
 

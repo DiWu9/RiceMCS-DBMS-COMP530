@@ -19,12 +19,14 @@ struct PageHeader {
 class MyDB_PageReaderWriter;
 typedef shared_ptr <MyDB_PageReaderWriter> MyDB_PageReaderWriterPtr;
 
+class MyDB_TableReaderWriter;
+
 class MyDB_PageReaderWriter {
 
 public:
 
 	// ANY OTHER METHODS YOU WANT HERE
-	MyDB_PageReaderWriter (MyDB_BufferManagerPtr mgrPtr, MyDB_TablePtr tablePtr, long ithPage);
+	MyDB_PageReaderWriter (MyDB_TableReaderWriter& tableReaderWriterPtr, long ithPage);
 
 	~MyDB_PageReaderWriter ();
 
@@ -55,7 +57,7 @@ private:
 	// ANYTHING ELSE YOU WANT HERE
 	friend class MyDB_PageRecIterator;
 
-	MyDB_BufferManagerPtr myMgr;
+	MyDB_TableReaderWriter& myTableReaderWriter;
 	MyDB_PageHandle myPage;
 	PageHeader* myPageHead;
 	size_t pageSize;
