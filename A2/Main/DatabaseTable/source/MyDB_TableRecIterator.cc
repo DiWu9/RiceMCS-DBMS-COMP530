@@ -1,3 +1,4 @@
+
 #ifndef TABLE_ITER_C
 #define TABLE_ITER_C
 
@@ -8,41 +9,30 @@
 
 using namespace std;
 
-
 // each time returnVal->next () is called, the resulting record will be placed into the record pointed to by iterateIntoMe
 void MyDB_TableRecIterator :: getNext() {
-    while (!this->pageIt->hasNext()) {
-        this->ithPage++;
-        this->pageIt = this->myTableReaderWriter[this->ithPage].getIterator(this->rec);
-    }
-    //cout << this->ithPage << "th page." << endl;
+    //cout << "ith page: " << this->ithPage << endl;
     this->pageIt->getNext();
 }
 
 bool MyDB_TableRecIterator :: hasNext() {
-    //cout << "ith page: " << this->ithPage << endl;
-    if (this->pageIt->hasNext()) {
-        return true;
-    }
-    else {
-        int i = this->ithPage + 1;
-        int indexOfLastPage = this->myTableReaderWriter.getIndexOfLastPage();
-        while (i <= indexOfLastPage) {
-            //cout << "ith page: " << this->ithPage << endl;
-            MyDB_RecordIteratorPtr tempIt = this->myTableReaderWriter[i].getIterator(this->rec);
-            if (tempIt->hasNext()) {
-                return true;
-            }
-            i++;
+    while (this->ithPage < this->myTableReaderWriter.getIndexOfLastPage()) {
+        if (this->pageIt->hasNext()) {
+            return true;
         }
-        return false;
+        this->ithPage ++;
+        this->pageRW = this->myTableReaderWriter.getIthPageReaderWriter(this->ithPage);
+        this->pageIt = this->pageRW->getIterator(this->rec);
     }
+    // now it's the pageIt for the last page
+    return this->pageIt->hasNext();
 }
 
 MyDB_TableRecIterator :: MyDB_TableRecIterator (MyDB_TableReaderWriter& tableReaderWriterPtr, MyDB_RecordPtr iterateIntoMe) : myTableReaderWriter(tableReaderWriterPtr) {
     this->rec = iterateIntoMe;
     this->ithPage = 0;
-    this->pageIt = this->myTableReaderWriter[this->ithPage].getIterator(this->rec);
+    this->pageRW = this->myTableReaderWriter.getIthPageReaderWriter(0);
+    this->pageIt = this->pageRW->getIterator(this->rec);
 }
 
 MyDB_TableRecIterator :: ~MyDB_TableRecIterator() {}

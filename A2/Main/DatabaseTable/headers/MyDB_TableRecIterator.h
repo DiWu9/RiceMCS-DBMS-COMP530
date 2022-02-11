@@ -5,6 +5,7 @@
 
 #include "MyDB_Record.h"
 #include "MyDB_RecordIterator.h"
+#include "MyDB_PageReaderWriter.h"
 #include "MyDB_TableReaderWriter.h"
 
 using namespace std;
@@ -28,6 +29,7 @@ private:
     MyDB_TableReaderWriter& myTableReaderWriter;
     MyDB_RecordPtr rec;
     MyDB_RecordIteratorPtr pageIt;
+    MyDB_PageReaderWriterPtr pageRW;
     size_t ithPage;
 
 };

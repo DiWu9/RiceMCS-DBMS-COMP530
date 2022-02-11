@@ -3,7 +3,6 @@
 #define TABLE_RW_H
 
 #include <memory>
-#include <vector>
 #include "MyDB_BufferManager.h"
 #include "MyDB_RecordIterator.h"
 #include "MyDB_PageRecIterator.h"
@@ -28,7 +27,7 @@ public:
 
 	size_t getIndexOfLastPage ();
 
-	size_t getVecSize ();
+	MyDB_PageReaderWriterPtr getIthPageReaderWriter (size_t i);
 
 	// create a table reader/writer for the specified table, using the specified
 	// buffer manager
@@ -61,13 +60,10 @@ private:
 
 	// ANYTHING YOU NEED HERE
 	friend class MyDB_TableRecIterator;
-	friend class MyDB_PageReaderWriter;
-	
-	vector<MyDB_PageReaderWriterPtr> pageRefs;
+
 	MyDB_TablePtr myTable;
 	MyDB_BufferManagerPtr myMgr;
 	MyDB_PageReaderWriterPtr lastPage;
-	int counter;
 
 };
 

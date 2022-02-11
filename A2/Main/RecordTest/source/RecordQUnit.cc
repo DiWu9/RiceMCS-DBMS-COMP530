@@ -65,79 +65,6 @@ int main(int argc, char *argv[]) {
 	switch (start) {
 	case 1:
 	{
-		// // count records with table iterator
-		// cout << "TEST 3..." << flush;
-		// initialize();
-		// int counter = 0;
-		// {
-		// 	cout << "create manager..." << flush;
-		// 	MyDB_CatalogPtr myCatalog = make_shared <MyDB_Catalog>("catFile");
-		// 	map <string, MyDB_TablePtr> allTables = MyDB_Table::getAllTables(myCatalog);
-		// 	MyDB_BufferManagerPtr myMgr = make_shared <MyDB_BufferManager>(1024, 16, "tempFile");
-
-		// 	cout << "create TableReaderWriter..." << flush;
-		// 	MyDB_TableReaderWriter supplierTable(allTables["supplier"], myMgr);
-		// 	MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
-
-		// 	cout << "create TableIterator..." << flush;
-		// 	MyDB_RecordIteratorPtr myIter = supplierTable.getIterator(temp);
-
-		// 	cout << "count..." << flush;
-		// 	while (myIter->hasNext()) {
-		// 		//cout << counter << endl;
-		// 		myIter->getNext();
-		// 		counter++;
-		// 	}
-
-		// 	cout << "shutdown manager..." << flush;
-		// }
-		// if (counter == 10000) cout << "CORRECT" << endl << flush;
-		// else cout << "***FAIL***" << endl << flush;
-		// QUNIT_IS_EQUAL(counter, 10000);
-		// // table append record
-		// cout << "TEST 4..." << flush;
-		// initialize();
-		// int counter = 0;
-		// {
-		// 	cout << "create manager..." << flush;
-		// 	MyDB_CatalogPtr myCatalog = make_shared <MyDB_Catalog>("catFile");
-		// 	map <string, MyDB_TablePtr> allTables = MyDB_Table::getAllTables(myCatalog);
-		// 	MyDB_BufferManagerPtr myMgr = make_shared <MyDB_BufferManager>(1024, 16, "tempFile");
-
-		// 	cout << "create TableReaderWriter..." << flush;
-		// 	MyDB_TableReaderWriter supplierTable(allTables["supplier"], myMgr);
-		// 	MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
-		// 	//cout << "Before index of last page: " << supplierTable.getIndexOfLastPage() << endl;
-
-		// 	cout << "generate record..." << flush;
-		// 	string s = "10001|Supplier#000010001|00000000|999|12-345-678-9012|1234.56|the special record|";
-		// 	temp->fromString(s);
-
-		// 	cout << "append record..." << flush;
-		// 	supplierTable.append(temp);
-		// 	cout << "last page offset before: " << supplierTable.last().getOffsetToEnd() << endl;
-		// 	cout << "index of last page: " << supplierTable.getIndexOfLastPage() << endl;
-		// 	supplierTable.printPages();
-		// 	cout << "last page offset after: " << supplierTable.last().getOffsetToEnd() << endl;
-		// 	cout << "index of last page: " << supplierTable.getIndexOfLastPage() << endl;
-		// 	//cout << "After index of last page: " << supplierTable.getIndexOfLastPage() << endl;
-
-		// 	cout << "create TableIterator..." << flush;
-		// 	MyDB_RecordIteratorPtr myIter = supplierTable.getIterator(temp);
-		// 	//cout << "last page offset: " << supplierTable.last().getOffsetToEnd() << endl;
-
-		// 	cout << "count..." << flush;
-		// 	while (myIter->hasNext()) {
-		// 	 	myIter->getNext();
-		// 	 	counter++;
-		// 	}
-
-		// 	cout << "shutdown manager..." << flush;
-		// }
-		// if (counter == 10001) cout << "CORRECT" << endl << flush;
-		// else cout << "***FAIL***" << endl << flush;
-		// QUNIT_IS_EQUAL(counter, 10001);
-
 		// table hasNext
 		cout << "TEST 1..." << flush;
 		initialize();
@@ -210,18 +137,12 @@ int main(int argc, char *argv[]) {
 			MyDB_TableReaderWriter supplierTable(allTables["supplier"], myMgr);
 			MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
 
-			cout << "last page index: " << supplierTable.getIndexOfLastPage() << endl;
-			cout << "vector size: " << supplierTable.getVecSize() << endl;
-
 			cout << "create TableIterator..." << flush;
 			MyDB_RecordIteratorPtr myIter = supplierTable.getIterator(temp);
 
 			cout << "count..." << flush;
 			while (myIter->hasNext()) {
 				myIter->getNext();
-				//stringstream ss;
-				//ss << temp;
-				//cout << ss.str() << endl;
 				counter++;
 			}
 
@@ -247,8 +168,6 @@ int main(int argc, char *argv[]) {
 			cout << "create TableReaderWriter..." << flush;
 			MyDB_TableReaderWriter supplierTable(allTables["supplier"], myMgr);
 			MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
-			cout << "last page index: " << supplierTable.getIndexOfLastPage() << endl;
-			cout << "vector size: " << supplierTable.getVecSize() << endl;
 
 			cout << "generate record..." << flush;
 			string s = "10001|Supplier#000010001|00000000|999|12-345-678-9012|1234.56|the special record|";
@@ -256,9 +175,6 @@ int main(int argc, char *argv[]) {
 
 			cout << "append record..." << flush;
 			supplierTable.append(temp);
-
-			cout << "last page index: " << supplierTable.getIndexOfLastPage() << endl;
-			cout << "vector size: " << supplierTable.getVecSize() << endl;
 
 			cout << "create TableIterator..." << flush;
 			MyDB_RecordIteratorPtr myIter = supplierTable.getIterator(temp);
@@ -466,6 +382,7 @@ int main(int argc, char *argv[]) {
 			MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
 
 			cout << "create PageIterator..." << flush;
+			
 			MyDB_RecordIteratorPtr myIter1 = supplierTable[55].getIterator(temp);
 			MyDB_RecordIteratorPtr myIter2 = supplierTable.last().getIterator(temp);
 
@@ -474,6 +391,7 @@ int main(int argc, char *argv[]) {
 				myIter1->getNext();
 				counter++;
 			}
+			cout << "Counter: " << counter << endl;
 
 			cout << "clear page 55..." << flush;
 			supplierTable[55].clear();
@@ -484,6 +402,7 @@ int main(int argc, char *argv[]) {
 				supplierTable[55].append(temp);
 				counter--;
 			}
+			cout << "Counter: " << counter << endl;
 
 			cout << "create TableIterator..." << flush;
 			MyDB_RecordIteratorPtr myIter3 = supplierTable.getIterator(temp);
