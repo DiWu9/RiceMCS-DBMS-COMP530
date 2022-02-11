@@ -22,8 +22,7 @@ bool MyDB_PageRecIterator :: hasNext() {
     return this->offset < this->myPageReaderWriter.myPageHead->offsetToEnd;
 }
 
-MyDB_PageRecIterator :: MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriter, MyDB_PageReaderWriterPtr pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe) : myPageReaderWriter(pageReaderWriter) {
-    this->myPageReaderWriterPtr = pageReaderWriterPtr;
+MyDB_PageRecIterator :: MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriter, MyDB_RecordPtr iterateIntoMe) : myPageReaderWriter(pageReaderWriter) {
     this->rec = iterateIntoMe;
     this->offset = 0;
 }

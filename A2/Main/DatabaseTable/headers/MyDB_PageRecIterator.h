@@ -20,13 +20,12 @@ public:
     
     bool hasNext();
 
-    MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriter, MyDB_PageReaderWriterPtr pageReaderWriterPtr, MyDB_RecordPtr iterateIntoMe);
+    MyDB_PageRecIterator (MyDB_PageReaderWriter& pageReaderWriter, MyDB_RecordPtr iterateIntoMe);
     ~MyDB_PageRecIterator ();
 
 private:
 
     MyDB_PageReaderWriter& myPageReaderWriter;
-    MyDB_PageReaderWriterPtr myPageReaderWriterPtr;
     MyDB_RecordPtr rec;
     size_t offset;
 

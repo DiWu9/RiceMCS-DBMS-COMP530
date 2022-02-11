@@ -42,7 +42,7 @@ MyDB_PageType MyDB_PageReaderWriter :: getType () {
 // called, the resulting record will be placed into the record pointed to
 // by iterateIntoMe
 MyDB_RecordIteratorPtr MyDB_PageReaderWriter :: getIterator (MyDB_RecordPtr iterateIntoMe) {
-	MyDB_PageRecIteratorPtr it = make_shared <MyDB_PageRecIterator> (*this, shared_from_this(), iterateIntoMe);
+	MyDB_PageRecIteratorPtr it = make_shared <MyDB_PageRecIterator> (*this, iterateIntoMe);
 	return it;
 }
 

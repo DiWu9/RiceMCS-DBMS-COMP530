@@ -19,7 +19,7 @@ struct PageHeader {
 class MyDB_PageReaderWriter;
 typedef shared_ptr <MyDB_PageReaderWriter> MyDB_PageReaderWriterPtr;
 
-class MyDB_PageReaderWriter : public enable_shared_from_this<MyDB_PageReaderWriter> {
+class MyDB_PageReaderWriter {
 
 public:
 
