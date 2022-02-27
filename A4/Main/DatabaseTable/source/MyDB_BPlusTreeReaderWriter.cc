@@ -78,35 +78,90 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 	}
 	else
 	{
-		MyDB_PageReaderWriter rootNode = this->operator[](rootLocation);
-		MyDB_PageReaderWriter childNode = this->operator[](1);
-		childNode.append(appendMe);
-		// MyDB_RecordIteratorAltPtr nodeIt = rootNode.getIteratorAlt();
-		// MyDB_RecordPtr lhs = appendMe;
-		// MyDB_RecordPtr rhs = getINRecord();
-		// function<bool> compareKey = buildComparator(lhs, rhs);
-		// while (true)
-		// {
-		// 	nodeIt->getCurrent(rhs);
-		// 	if (compareKey()) {
-
-		// 	}
-		// 	if (!nodeIt->advance())
-		// 	{
-		// 		break;
-		// 	}
-		// }
+		append(rootLocation, appendMe);
 	}
 }
 
+/**
+ * @brief This method accepts a page to split, and one more record to add onto the end of the
+page (which cannot fit). It then splits the contents of the page, incorporating the new
+record, leaving all of the records with big key values in place, and creating a new page
+with all of the small key values at the end of the file. A smart pointer to an internal node
+record whose key value and pointer is produced by this method as a return value (so
+that it can be inserted into the parent of the splitting node). This internal node record
+has been set up to point to the new page.
+ */
 MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe, MyDB_RecordPtr andMe)
 {
 	return nullptr;
 }
 
+/**
+ * @brief append () accepts the identity of a page whichPage in the file corresponding to the
+B+-Tree, as well as a record to append, and then it recursively finds the appropriate leaf
+node for the record and appends the record to that node. This is all done using the
+classical B+-Tree insertion algorithm. (In this sense, “append” is something of a
+misnomer, because we are actually doing a classic B+-Tree insert; I used the name
+“append” to be consistent with the regular file reader/writer). If the page whichPage
+splits due to the insertion (a split can occur at an internal node level or at a leaf node
+level) then the append () method returns a new MyDB_INRecordPtr object that points
+to an appropriate internal node record. As described subsequently, internal node
+records are special records that live only in the internal nodes (pages) in the B+-Tree
+and they are different because they have only a key and a pointer, and no data. All leaf
+nodes in our B+-Tree (those whose type is MyDB_PageType :: RegularPage) will have
+only “regular” records. All others (directory or internal node pages) will hold these
+special internal node records.
+ */
 MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr appendMe)
 {
-	return nullptr;
+	MyDB_PageReaderWriter appendTo = this->operator[](whichPage);
+	// if internal page
+	if (appendTo.getType() == MyDB_PageType::DirectoryPage)
+	{
+		MyDB_RecordIteratorAltPtr nodeIt = appendTo.getIteratorAlt();
+		MyDB_INRecordPtr rhs = getINRecord();
+		function<bool()> compareKey = buildComparator(appendMe, rhs);
+		while (true)
+		{
+			nodeIt->getCurrent(rhs);
+			// find the corresponding inRecord
+			if (compareKey())
+			{
+				MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
+				return nullptr;
+
+				// if its child split page
+				// if (newSplitPage != nullptr)
+				// {
+				// 	bool appendSuccess = appendTo.append(newSplitPage);
+				// 	if (appendSuccess)
+				// 	{
+				// 		MyDB_INRecordPtr sortlhs = getINRecord();
+				// 		MyDB_INRecordPtr sortrhs = getINRecord();
+				// 		appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
+				// 		return nullptr;
+				// 	}
+				// 	else
+				// 	{
+				// 		return split(appendTo, newSplitPage);
+				// 	}
+				// }
+			}
+			nodeIt->advance();
+		}
+	}
+	// if leaf page, just append it to end
+	else
+	{
+		bool appendSuccess = appendTo.append(appendMe);
+		if (appendSuccess)
+		{
+			return nullptr;
+		}
+		// else {
+		// 	return split(appendTo, appendMe);
+		// }
+	}
 }
 
 MyDB_INRecordPtr MyDB_BPlusTreeReaderWriter ::getINRecord()

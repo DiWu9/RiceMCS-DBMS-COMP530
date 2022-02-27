@@ -58,26 +58,39 @@ int main(int argc, char *argv[])
 		MyDB_BufferManagerPtr myMgr = make_shared<MyDB_BufferManager>(1024, 128, "tempFile");
 		MyDB_BPlusTreeReaderWriter supplierTable("suppkey", myTable, myMgr);
 
+		string s1 = "10001|Supplier#000010001|00000000|999|12-345-678-9012|1234.56|the special record|";
+		string s2 = "1|Supplier#000000001|sdrGnXCDRcfriBvY0KL,ipCanOTyK t NN1|17|27-918-335-1736|5755.94|requests haggle carefully. accounts sublate finally. carefully ironic pa|";
+		string s3 = "2|Supplier#000000002|TRMhVHz3XiFuhapxucPo1|5|15-679-861-2259|4032.68|furiously stealthy frays thrash alongside of the slyly express deposits. blithely regular req|";
+		string s4 = "3|Supplier#000000003|BZ0kXcHUcHjx62L7CjZSql7gbWQ6RPn5X|1|11-383-516-1199|4192.40|furiously regular instructions impress slyly! carefu|";
+		string s5 = "4|Supplier#000000004|qGTQJXogS83a7MBnEweGHKevK|15|25-843-787-7479|4641.08|final ideas cajole. furiously close dep|";
+
 		MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
-		string s = "10001|Supplier#000010001|00000000|999|12-345-678-9012|1234.56|the special record|";
-		temp->fromString(s);
+		temp->fromString(s1);
+		supplierTable.append(temp);
+		supplierTable.printTree();
+		temp->fromString(s2);
+		supplierTable.append(temp);
+		supplierTable.printTree();
+		temp->fromString(s3);
 		supplierTable.append(temp);
 		supplierTable.printTree();
 
-		temp = supplierTable.getEmptyRecord();
-		s = "1|Supplier#000000001|sdrGnXCDRcfriBvY0KL,ipCanOTyK t NN1|17|27-918-335-1736|5755.94|requests haggle carefully. accounts sublate finally. carefully ironic pa|";
-		temp->fromString(s);
-		supplierTable.append(temp);
-		supplierTable.printTree();
-
-		temp = supplierTable.getEmptyRecord();
-		s = "2|Supplier#000000002|TRMhVHz3XiFuhapxucPo1|5|15-679-861-2259|4032.68|furiously stealthy frays thrash alongside of the slyly express deposits. blithely regular req|";
-		temp->fromString(s);
-		supplierTable.append(temp);
-		supplierTable.printTree();
-
-		//3|Supplier#000000003|BZ0kXcHUcHjx62L7CjZSql7gbWQ6RPn5X|1|11-383-516-1199|4192.40|furiously regular instructions impress slyly! carefu|
-		//4|Supplier#000000004|qGTQJXogS83a7MBnEweGHKevK|15|25-843-787-7479|4641.08|final ideas cajole. furiously close dep|
+		// there should be 3 records
+		MyDB_RecordIteratorAltPtr myIter = supplierTable.getIteratorAlt();
+		
+		int counter = 0;
+		while (myIter->advance())
+		{
+			myIter->getCurrent(temp);
+			counter++;
+		}
+		bool result = (counter == 3);
+		if (result)
+			cout << "\tTEST PASSED\n";
+		else
+			cout << "\tTEST FAILED\n";
+		QUNIT_IS_TRUE(result);
+		
 	}
 		FALLTHROUGH_INTENDED;
 	// case 1:
