@@ -21,27 +21,7 @@ MyDB_BPlusTreeReaderWriter ::MyDB_BPlusTreeReaderWriter(string orderOnAttName, M
 
 	// and the root location
 	rootLocation = getTable()->getRootLocation();
-
-	// // find the ordering attribute
-	// auto res = forMe->getSchema()->getAttByName(orderOnAttName);
-
-	// // remember information about the ordering attribute
-	// orderingAttType = res.second;
-	// whichAttIsOrdering = res.first;
-
-	// // and the root location
-	// getTable()->setRootLocation(0);
-	// MyDB_INRecordPtr lastRootRecord = getINRecord();
-	// MyDB_INRecordPtr lastChildRecord = getINRecord();
-	// MyDB_PageReaderWriter rootNode = this->operator[](0);
-	// MyDB_PageReaderWriter childNode = this->operator[](1);
-	// MyDB_INRecordPtr childPtr = getINRecord();
-	// childPtr->setPtr(1);
-	// rootNode.append(childPtr);
-	// rootNode.append(lastRootRecord);
-	// childNode.append(lastChildRecord);
-
-	// rootLocation = getTable()->getRootLocation();
+	
 }
 
 MyDB_RecordIteratorAltPtr MyDB_BPlusTreeReaderWriter ::getSortedRangeIteratorAlt(MyDB_AttValPtr low, MyDB_AttValPtr high)
@@ -78,8 +58,46 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 	}
 	else
 	{
-		append(rootLocation, appendMe);
+		MyDB_RecordPtr lptr = append(rootLocation, appendMe);
+		// if root split
+		if (lptr != nullptr)
+		{
+			MyDB_INRecordPtr rptr = getINRecord();
+			rptr->setPtr(rootLocation);
+
+			// remove the first record of the old root
+			vector<MyDB_RecordPtr> oldRootRecords;
+			MyDB_PageReaderWriter oldRoot = this->operator[](rootLocation);
+			MyDB_RecordIteratorAltPtr itOldRoot = oldRoot.getIteratorAlt();
+			while (itOldRoot->advance())
+			{
+				MyDB_INRecordPtr inRecord = getINRecord();
+				itOldRoot->getCurrent(inRecord);
+				oldRootRecords.push_back(inRecord);
+			}
+			oldRoot.clear();
+			oldRoot.setType(MyDB_PageType::DirectoryPage);
+			for (int i = 1; i < oldRootRecords.size(); i++)
+			{
+				oldRoot.append(oldRootRecords[i]);
+			}
+
+			MyDB_PageReaderWriter newRoot = this->operator[](getTable()->lastPage() + 1);
+			getTable()->setRootLocation(getTable()->lastPage());
+			rootLocation = getTable()->getRootLocation();
+			newRoot.setType(MyDB_PageType::DirectoryPage);
+			newRoot.append(lptr);
+			newRoot.append(rptr);
+		}
 	}
+	// cout << "Root location: " << rootLocation << endl;
+	// if (this->operator[](rootLocation).getType() == MyDB_PageType::DirectoryPage) {
+	// 	cout << "Root page is directory" << endl;
+	// }
+	// else {
+	// 	cout << "Root page is regular" << endl;
+	// }
+	// printTree();
 }
 
 /**
@@ -93,7 +111,81 @@ has been set up to point to the new page.
  */
 MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe, MyDB_RecordPtr andMe)
 {
-	return nullptr;
+
+	// append and sort phase
+	MyDB_RecordPtr lhs, rhs;
+	bool isDirectoryPage = splitMe.getType() == MyDB_PageType::DirectoryPage;
+	if (isDirectoryPage)
+	{
+		lhs = getINRecord();
+		rhs = getINRecord();
+	}
+	else
+	{
+		lhs = getEmptyRecord();
+		rhs = getEmptyRecord();
+	}
+	splitMe.sortInPlace(buildComparator(lhs, rhs), lhs, rhs);
+
+	vector<MyDB_RecordPtr> recordPtrs;
+	bool andMeNotAdded = true;
+	MyDB_RecordIteratorAltPtr it = splitMe.getIteratorAlt();
+	function<bool()> recordCompare;
+	while (true)
+	{
+		MyDB_RecordPtr recPtr;
+		if (isDirectoryPage)
+		{
+			recPtr = getINRecord();
+		}
+		else
+		{
+			recPtr = getEmptyRecord();
+		}
+		it->getCurrent(recPtr);
+		if (andMeNotAdded)
+		{
+			recordCompare = buildComparator(andMe, recPtr);
+			if (recordCompare())
+			{
+				recordPtrs.push_back(andMe);
+				andMeNotAdded = false;
+			}
+			recordPtrs.push_back(recPtr);
+		}
+		if (!it->advance())
+		{
+			break;
+		}
+	}
+	// if andMe is the biggest record and not added during the process
+	if (andMeNotAdded) {
+		recordPtrs.push_back(andMe);
+	}
+
+	// find median and split phase
+	int n = recordPtrs.size();
+	int median = n / 2;
+	MyDB_PageReaderWriter newPage = this->operator[](getTable()->lastPage() + 1);
+	splitMe.clear();
+	if (isDirectoryPage)
+	{
+		splitMe.setType(MyDB_PageType::DirectoryPage);
+		newPage.setType(MyDB_PageType::DirectoryPage);
+	}
+	for (int i1 = 0; i1 < median; i1++)
+	{
+		newPage.append(recordPtrs[i1]);
+	}
+	for (int i2 = median; i2 < n; i2++)
+	{
+		splitMe.append(recordPtrs[i2]);
+	}
+	MyDB_INRecordPtr toReturn = getINRecord();
+	toReturn->setPtr(getTable()->lastPage());
+	toReturn->setKey(getKey(recordPtrs[median]));
+
+	return toReturn;
 }
 
 /**
@@ -128,24 +220,26 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 			if (compareKey())
 			{
 				MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
-				return nullptr;
 
-				// if its child split page
-				// if (newSplitPage != nullptr)
-				// {
-				// 	bool appendSuccess = appendTo.append(newSplitPage);
-				// 	if (appendSuccess)
-				// 	{
-				// 		MyDB_INRecordPtr sortlhs = getINRecord();
-				// 		MyDB_INRecordPtr sortrhs = getINRecord();
-				// 		appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
-				// 		return nullptr;
-				// 	}
-				// 	else
-				// 	{
-				// 		return split(appendTo, newSplitPage);
-				// 	}
-				// }
+				if (newSplitPage == nullptr)
+				{
+					return nullptr;
+				}
+				else
+				{
+					bool appendSuccess = appendTo.append(newSplitPage);
+					if (appendSuccess)
+					{
+						MyDB_RecordPtr sortlhs = getINRecord();
+						MyDB_RecordPtr sortrhs = getINRecord();
+						appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
+						return nullptr;
+					}
+					else
+					{
+						return split(appendTo, newSplitPage);
+					}
+				}
 			}
 			nodeIt->advance();
 		}
@@ -158,9 +252,10 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 		{
 			return nullptr;
 		}
-		// else {
-		// 	return split(appendTo, appendMe);
-		// }
+		else
+		{
+			return split(appendTo, appendMe);
+		}
 	}
 }
 
@@ -171,9 +266,6 @@ MyDB_INRecordPtr MyDB_BPlusTreeReaderWriter ::getINRecord()
 
 void MyDB_BPlusTreeReaderWriter ::printTree()
 {
-	/*
-	empty tree
-	*/
 	if (rootLocation == -1)
 	{
 		cout << "\nPrint tree: empty tree." << endl;
