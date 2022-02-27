@@ -10,6 +10,10 @@
 
 #include <string>
 
+void MyDB_BPlusTreeReaderWriter ::setAppendToPrintTree(bool print) {
+	appendPrintTree = print;
+}
+
 MyDB_BPlusTreeReaderWriter ::MyDB_BPlusTreeReaderWriter(string orderOnAttName, MyDB_TablePtr forMe, MyDB_BufferManagerPtr myBuffer) : MyDB_TableReaderWriter(forMe, myBuffer)
 {
 	// find the ordering attribute
@@ -22,6 +26,7 @@ MyDB_BPlusTreeReaderWriter ::MyDB_BPlusTreeReaderWriter(string orderOnAttName, M
 	// and the root location
 	rootLocation = getTable()->getRootLocation();
 	
+	appendPrintTree = false;
 }
 
 MyDB_RecordIteratorAltPtr MyDB_BPlusTreeReaderWriter ::getSortedRangeIteratorAlt(MyDB_AttValPtr low, MyDB_AttValPtr high)
@@ -43,8 +48,11 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 {
 	// INRecord: key(value), ptr(id of child)
 	// methods: int getPtr (), setPtr (int fromMe), setKey (MyDB_AttValPtr toMe), getKey ()
-	if (rootLocation == -1)
+
+	// if table is empty or root was cleared, set up a new tree
+	if (rootLocation == -1 || this->operator[](rootLocation).getType() == MyDB_PageType::RegularPage || getTable()->lastPage() < rootLocation)
 	{
+		cout << "initialization triggered" << endl;
 		getTable()->setRootLocation(0);
 		rootLocation = getTable()->getRootLocation();
 		MyDB_PageReaderWriter rootNode = this->operator[](0);
@@ -64,24 +72,6 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 		{
 			MyDB_INRecordPtr rptr = getINRecord();
 			rptr->setPtr(rootLocation);
-
-			// remove the first record of the old root
-			vector<MyDB_RecordPtr> oldRootRecords;
-			MyDB_PageReaderWriter oldRoot = this->operator[](rootLocation);
-			MyDB_RecordIteratorAltPtr itOldRoot = oldRoot.getIteratorAlt();
-			while (itOldRoot->advance())
-			{
-				MyDB_INRecordPtr inRecord = getINRecord();
-				itOldRoot->getCurrent(inRecord);
-				oldRootRecords.push_back(inRecord);
-			}
-			oldRoot.clear();
-			oldRoot.setType(MyDB_PageType::DirectoryPage);
-			for (int i = 1; i < oldRootRecords.size(); i++)
-			{
-				oldRoot.append(oldRootRecords[i]);
-			}
-
 			MyDB_PageReaderWriter newRoot = this->operator[](getTable()->lastPage() + 1);
 			getTable()->setRootLocation(getTable()->lastPage());
 			rootLocation = getTable()->getRootLocation();
@@ -97,6 +87,9 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 	// else {
 	// 	cout << "Root page is regular" << endl;
 	// }
+	if (appendPrintTree) {
+		printTree();
+	}
 	// printTree();
 }
 
@@ -151,8 +144,8 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe,
 				recordPtrs.push_back(andMe);
 				andMeNotAdded = false;
 			}
-			recordPtrs.push_back(recPtr);
 		}
+		recordPtrs.push_back(recPtr);
 		if (!it->advance())
 		{
 			break;
@@ -241,7 +234,33 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 					}
 				}
 			}
-			nodeIt->advance();
+
+			// when at end of page but still not find the record of key greater than appendMe
+			// the key of the last record of the page must equal to appendMe
+			if (!nodeIt->advance()) 
+			{
+				MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
+
+				if (newSplitPage == nullptr)
+				{
+					return nullptr;
+				}
+				else
+				{
+					bool appendSuccess = appendTo.append(newSplitPage);
+					if (appendSuccess)
+					{
+						MyDB_RecordPtr sortlhs = getINRecord();
+						MyDB_RecordPtr sortrhs = getINRecord();
+						appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
+						return nullptr;
+					}
+					else
+					{
+						return split(appendTo, newSplitPage);
+					}
+				}
+			}
 		}
 	}
 	// if leaf page, just append it to end
@@ -275,6 +294,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 		string s = "\nPrint tree: \n";
 		string sLayer;
 		string sPage;
+		int numRecords = 0;
 		vector<MyDB_PageReaderWriter> layer;
 		layer.push_back(this->operator[](rootLocation));
 		while (layer.size() != 0)
@@ -310,6 +330,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 					{
 						currPageIt->getCurrent(normalRecord);
 						sPage = sPage + "(" + getKey(normalRecord)->toString() + ")|";
+						numRecords ++;
 						if (!currPageIt->advance())
 						{
 							break;
@@ -321,6 +342,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 			s = s + sLayer + "\n";
 			layer = nextLayer;
 		}
+		s = s + "Num records: " + std::to_string(numRecords) + "\n";
 		cout << s << flush;
 	}
 }

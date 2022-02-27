@@ -44,6 +44,8 @@ public:
 	// print the contents of the tree to the screen
 	void printTree();
 
+	void setAppendToPrintTree(bool print);
+
 private:
 	/* NOTE THAT EACH OF THESE METHODS ARE OPTIONAL.  They are a suggestion for a set of helper
 		   methods that you might consider including in order to get your stuff to work. */
@@ -81,6 +83,9 @@ private:
 
 	// the number of the attribute that we are ordering on, in the data records
 	int whichAttIsOrdering;
+
+
+	bool appendPrintTree;
 };
 
 #endif

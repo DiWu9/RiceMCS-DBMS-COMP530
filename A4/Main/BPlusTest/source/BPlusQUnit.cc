@@ -24,7 +24,7 @@
 int main(int argc, char *argv[])
 {
 
-	int start = 1;
+	int start = 0;
 	if (argc > 1 && argv[1][0] >= '0' && argv[1][0] <= '9')
 	{
 		start = argv[1][0] - '0';
@@ -58,6 +58,8 @@ int main(int argc, char *argv[])
 
 		MyDB_BufferManagerPtr myMgr = make_shared<MyDB_BufferManager>(1024, 128, "tempFile");
 		MyDB_BPlusTreeReaderWriter supplierTable("suppkey", myTable, myMgr);
+
+		cout << supplierTable.getTable()->getRootLocation() << endl;
 
 		vector<string> records{
 			"1|Supplier#000010001|00000000|999|12-345-678-9012|1234.56|the special record|",
@@ -106,7 +108,6 @@ int main(int argc, char *argv[])
 		{
 			temp->fromString(records[i]);
 			supplierTable.append(temp);
-			supplierTable.printTree();
 		}
 
 		MyDB_RecordIteratorAltPtr myIter = supplierTable.getIteratorAlt();
@@ -116,7 +117,7 @@ int main(int argc, char *argv[])
 			myIter->getCurrent(temp);
 			counter++;
 		}
-		cout << "Counter: " << counter << endl;
+		
 		bool result = (counter == records.size());
 		if (result)
 			cout << "\tTEST PASSED\n";
@@ -130,7 +131,12 @@ int main(int argc, char *argv[])
 		cout << "TEST 1... creating tree for small table, on suppkey " << flush;
 		MyDB_BufferManagerPtr myMgr = make_shared<MyDB_BufferManager>(1024, 128, "tempFile");
 		MyDB_BPlusTreeReaderWriter supplierTable("suppkey", myTable, myMgr);
+
+		cout << supplierTable.getTable()->getRootLocation() << endl;
+
 		supplierTable.loadFromTextFile("supplier.tbl");
+
+		
 
 		// there should be 10000 records
 		MyDB_RecordPtr temp = supplierTable.getEmptyRecord();
@@ -155,6 +161,9 @@ int main(int argc, char *argv[])
 		cout << "TEST 2... creating tree for small table, on nationkey " << flush;
 		MyDB_BufferManagerPtr myMgr = make_shared<MyDB_BufferManager>(1024, 128, "tempFile");
 		MyDB_BPlusTreeReaderWriter supplierTable("nationkey", myTable, myMgr);
+		
+		cout << supplierTable.getTable()->getRootLocation() << endl;
+
 		supplierTable.loadFromTextFile("supplier.tbl");
 
 		// there should be 10000 records
