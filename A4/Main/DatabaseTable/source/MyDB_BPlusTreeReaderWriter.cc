@@ -79,63 +79,71 @@ file, that efficiently look for all of the records with keys falling in a specif
 bool MyDB_BPlusTreeReaderWriter ::discoverPages(int whichPage, vector<MyDB_PageReaderWriter> &list, MyDB_AttValPtr low, MyDB_AttValPtr high)
 {
 	MyDB_PageReaderWriter page = this->operator[](whichPage);
-	bool isDirectoryPage = page.getType() == MyDB_PageType::DirectoryPage;
-
+	vector<MyDB_PageReaderWriter> layer;
+	layer.push_back(page);
 	MyDB_INRecordPtr lowPtr = getINRecord();
 	MyDB_INRecordPtr highPtr = getINRecord();
 	lowPtr->setKey(low);
 	highPtr->setKey(high);
-
 	MyDB_RecordPtr temp;
-	if (isDirectoryPage)
-	{
-		temp = getINRecord();
-	}
-	else
-	{
-		temp = getEmptyRecord();
-	}
+	MyDB_RecordIteratorAltPtr it;
+	bool isDirectoryPage;
+	bool discovered = false;
 
-	function<bool()> smallerThanLow = buildComparator(temp, lowPtr);
-	function<bool()> greaterThanHigh = buildComparator(highPtr, temp);
-
-	MyDB_RecordIteratorAltPtr it = page.getIteratorAlt();
-
-	if (isDirectoryPage)
+	while (layer.size() > 0)
 	{
-		bool found = false;
-		bool prevGreaterThanHigh = false;
-		while (true)
+		vector<MyDB_PageReaderWriter> newLayer;
+		isDirectoryPage = layer[0].getType() == MyDB_PageType::DirectoryPage;
+
+		if (isDirectoryPage)
 		{
-			it->getCurrent(temp);
-			if (!smallerThanLow()) {
-				int pagePtr = temp->getAtt(1)->toInt();
-				cout << "\nPageptr: " << pagePtr << endl;
-				found = found || discoverPages(pagePtr, list, low, high);
-			}
-			if (greaterThanHigh()) {
-				return found;
-			}
-			if (!it->advance()) {
-				return found;
-			}
+			temp = getINRecord();
 		}
-	}
-	else
-	{
-		while (true)
+		else
 		{
-			it->getCurrent(temp);
-			if (!(smallerThanLow() || greaterThanHigh()))
+			temp = getEmptyRecord();
+		}
+		function<bool()> smallerThanLow = buildComparator(temp, lowPtr);
+		function<bool()> greaterThanHigh = buildComparator(highPtr, temp);
+
+		if (isDirectoryPage)
+		{
+			bool exceedHigh = false;
+			for (int i = 0; i < layer.size(); i++)
 			{
-				list.push_back(page);
-				return true;
-			}
-			if (!it->advance()) {
-				return false;
+				it = layer[i].getIteratorAlt();
+				while (it->advance())
+				{
+					it->getCurrent(temp);
+					if (!smallerThanLow())
+					{
+						int pagePtr = temp->getAtt(1)->toInt();
+						newLayer.push_back(this->operator[](pagePtr));
+					}
+					if (greaterThanHigh())
+					{
+						if (exceedHigh) {
+							break;
+						}
+						else {
+							exceedHigh = true;
+						}
+					}
+				}
 			}
 		}
+		else
+		{
+			for (int i = 0; i < layer.size(); i++)
+			{
+				discovered = true;
+				list.push_back(layer[i]);
+			}
+		}
+		layer = newLayer;
 	}
+
+	return discovered;
 }
 
 void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
@@ -146,7 +154,6 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 	// if table is empty or root was cleared, set up a new tree
 	if (rootLocation == -1 || this->operator[](rootLocation).getType() == MyDB_PageType::RegularPage || getTable()->lastPage() < rootLocation)
 	{
-		cout << "initialization triggered" << endl;
 		getTable()->setRootLocation(0);
 		rootLocation = getTable()->getRootLocation();
 		MyDB_PageReaderWriter rootNode = this->operator[](0);
@@ -212,7 +219,7 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe,
 	bool andMeNotAdded = true;
 	MyDB_RecordIteratorAltPtr it = splitMe.getIteratorAlt();
 	function<bool()> recordCompare;
-	while (true)
+	while (it->advance())
 	{
 		MyDB_RecordPtr recPtr;
 		if (isDirectoryPage)
@@ -234,10 +241,6 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe,
 			}
 		}
 		recordPtrs.push_back(recPtr);
-		if (!it->advance())
-		{
-			break;
-		}
 	}
 	// if andMe is the biggest record and not added during the process
 	if (andMeNotAdded)
@@ -295,7 +298,7 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 		MyDB_RecordIteratorAltPtr nodeIt = appendTo.getIteratorAlt();
 		MyDB_INRecordPtr rhs = getINRecord();
 		function<bool()> compareKey = buildComparator(appendMe, rhs);
-		while (true)
+		while (nodeIt->advance())
 		{
 			nodeIt->getCurrent(rhs);
 			// find the corresponding inRecord
@@ -323,32 +326,27 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 					}
 				}
 			}
-
-			// when at end of page but still not find the record of key greater than appendMe
-			// the key of the last record of the page must equal to appendMe
-			if (!nodeIt->advance())
+		}
+		// when at end of page but still not find the record of key greater than appendMe
+		// the key of the last record of the page must equal to appendMe
+		MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
+		if (newSplitPage == nullptr)
+		{
+			return nullptr;
+		}
+		else
+		{
+			bool appendSuccess = appendTo.append(newSplitPage);
+			if (appendSuccess)
 			{
-				MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
-
-				if (newSplitPage == nullptr)
-				{
-					return nullptr;
-				}
-				else
-				{
-					bool appendSuccess = appendTo.append(newSplitPage);
-					if (appendSuccess)
-					{
-						MyDB_RecordPtr sortlhs = getINRecord();
-						MyDB_RecordPtr sortrhs = getINRecord();
-						appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
-						return nullptr;
-					}
-					else
-					{
-						return split(appendTo, newSplitPage);
-					}
-				}
+				MyDB_RecordPtr sortlhs = getINRecord();
+				MyDB_RecordPtr sortrhs = getINRecord();
+				appendTo.sortInPlace(buildComparator(sortlhs, sortrhs), sortlhs, sortrhs);
+				return nullptr;
+			}
+			else
+			{
+				return split(appendTo, newSplitPage);
 			}
 		}
 	}
@@ -385,7 +383,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 		string sPage;
 		int numRecords = 0;
 		vector<MyDB_PageReaderWriter> layer;
-		layer.push_back(this->operator[](32));
+		layer.push_back(this->operator[](112));
 		while (layer.size() != 0)
 		{
 			sLayer = "";
@@ -399,31 +397,23 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 				{
 					sPage = sPage + "|IN|";
 					MyDB_INRecordPtr inRecord = getINRecord();
-					while (true)
+					while (currPageIt->advance())
 					{
 						currPageIt->getCurrent(inRecord);
 						int childPtr = inRecord->getPtr();
 						nextLayer.push_back(this->operator[](childPtr));
 						sPage = sPage + "(" + inRecord->getKey()->toString() + ", " + std::to_string(childPtr) + ")|";
-						if (!currPageIt->advance())
-						{
-							break;
-						}
 					}
 				}
 				else
 				{
 					sPage = sPage + "|LF|";
 					MyDB_RecordPtr normalRecord = getEmptyRecord();
-					while (true)
+					while (currPageIt->advance())
 					{
 						currPageIt->getCurrent(normalRecord);
 						sPage = sPage + "(" + getKey(normalRecord)->toString() + ")|";
 						numRecords++;
-						if (!currPageIt->advance())
-						{
-							break;
-						}
 					}
 				}
 				sLayer = sLayer + sPage;
@@ -506,6 +496,46 @@ function<bool()> MyDB_BPlusTreeReaderWriter ::buildComparator(MyDB_RecordPtr lhs
 		cout << "This is bad... cannot do anything with the >.\n";
 		exit(1);
 	}
+}
+
+void MyDB_BPlusTreeReaderWriter ::printPageList(vector<MyDB_PageReaderWriter> &list)
+{
+	MyDB_RecordIteratorAltPtr currPageIt;
+	string sPageList = "\n";
+	string sPage;
+
+	if (list[0].getType() == MyDB_PageType::DirectoryPage)
+	{
+		MyDB_INRecordPtr inRecord = getINRecord();
+		for (int i = 0; i < list.size(); i++)
+		{
+			currPageIt = list[i].getIteratorAlt();
+			sPage = sPage + "|IN|";
+			while (currPageIt->advance())
+			{
+				currPageIt->getCurrent(inRecord);
+				int childPtr = inRecord->getPtr();
+				sPage = sPage + "(" + inRecord->getKey()->toString() + ", " + std::to_string(childPtr) + ")|";
+			}
+			sPageList = sPageList + sPage + "\n";
+		}
+	}
+	else
+	{
+		MyDB_RecordPtr normalRecord = getEmptyRecord();
+		for (int i = 0; i < list.size(); i++)
+		{
+			currPageIt = list[i].getIteratorAlt();
+			sPage = "|LF|";
+			while (currPageIt->advance())
+			{
+				currPageIt->getCurrent(normalRecord);
+				sPage = sPage + "(" + getKey(normalRecord)->toString() + ")|";
+			}
+			sPageList = sPageList + sPage + "\n";
+		}
+	}
+	cout << sPageList << flush;
 }
 
 #endif
