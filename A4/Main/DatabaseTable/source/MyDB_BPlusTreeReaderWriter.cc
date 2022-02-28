@@ -10,7 +10,8 @@
 
 #include <string>
 
-void MyDB_BPlusTreeReaderWriter ::setAppendToPrintTree(bool print) {
+void MyDB_BPlusTreeReaderWriter ::setAppendToPrintTree(bool print)
+{
 	appendPrintTree = print;
 }
 
@@ -25,23 +26,116 @@ MyDB_BPlusTreeReaderWriter ::MyDB_BPlusTreeReaderWriter(string orderOnAttName, M
 
 	// and the root location
 	rootLocation = getTable()->getRootLocation();
-	
+
 	appendPrintTree = false;
 }
 
 MyDB_RecordIteratorAltPtr MyDB_BPlusTreeReaderWriter ::getSortedRangeIteratorAlt(MyDB_AttValPtr low, MyDB_AttValPtr high)
 {
-	return nullptr;
+	vector<MyDB_PageReaderWriter> pageList;
+	discoverPages(rootLocation, pageList, low, high);
+
+	MyDB_RecordPtr temp = getEmptyRecord();
+	MyDB_RecordPtr lhs = getEmptyRecord();
+	MyDB_RecordPtr rhs = getEmptyRecord();
+
+	MyDB_INRecordPtr lowPtr = getINRecord();
+	MyDB_INRecordPtr highPtr = getINRecord();
+	lowPtr->setKey(low);
+	highPtr->setKey(high);
+
+	return make_shared<MyDB_PageListIteratorSelfSortingAlt>(pageList, lhs, rhs, buildComparator(lhs, rhs), temp, buildComparator(temp, lowPtr), buildComparator(highPtr, temp), true);
 }
 
 MyDB_RecordIteratorAltPtr MyDB_BPlusTreeReaderWriter ::getRangeIteratorAlt(MyDB_AttValPtr low, MyDB_AttValPtr high)
 {
-	return nullptr;
+	vector<MyDB_PageReaderWriter> pageList;
+	discoverPages(rootLocation, pageList, low, high);
+
+	MyDB_RecordPtr temp = getEmptyRecord();
+	MyDB_RecordPtr lhs = getEmptyRecord();
+	MyDB_RecordPtr rhs = getEmptyRecord();
+
+	MyDB_INRecordPtr lowPtr = getINRecord();
+	MyDB_INRecordPtr highPtr = getINRecord();
+	lowPtr->setKey(low);
+	highPtr->setKey(high);
+
+	return make_shared<MyDB_PageListIteratorSelfSortingAlt>(pageList, lhs, rhs, buildComparator(lhs, rhs), temp, buildComparator(temp, lowPtr), buildComparator(highPtr, temp), false);
 }
 
+/**
+ * @brief discoverPages () accepts the identity of a page in the file corresponding to the B+-
+Tree, and then it recursively finds all leaf pages reachable from that initial page, which
+could possibly have and records that fall in a specified range (the range is specified by
+MyDB_AttValPtr low, MyDB_AttValPtr high). Any pages found are then returned to
+the caller by putting them in the parameter list. The return value from this method is a
+boolean indicating whether the page pointed to by whichPage was at the leaf level (this
+can be used to perform an optimization to avoid repeatedly descending to all of the leaf
+pages that are children of an internal node, causing extra I/Os, once you have found a
+single leaf page). discoverPages () is used to implement iterators over the B+-Tree
+file, that efficiently look for all of the records with keys falling in a specified range.
+ */
 bool MyDB_BPlusTreeReaderWriter ::discoverPages(int whichPage, vector<MyDB_PageReaderWriter> &list, MyDB_AttValPtr low, MyDB_AttValPtr high)
 {
-	return false;
+	MyDB_PageReaderWriter page = this->operator[](whichPage);
+	bool isDirectoryPage = page.getType() == MyDB_PageType::DirectoryPage;
+
+	MyDB_INRecordPtr lowPtr = getINRecord();
+	MyDB_INRecordPtr highPtr = getINRecord();
+	lowPtr->setKey(low);
+	highPtr->setKey(high);
+
+	MyDB_RecordPtr temp;
+	if (isDirectoryPage)
+	{
+		temp = getINRecord();
+	}
+	else
+	{
+		temp = getEmptyRecord();
+	}
+
+	function<bool()> smallerThanLow = buildComparator(temp, lowPtr);
+	function<bool()> greaterThanHigh = buildComparator(highPtr, temp);
+
+	MyDB_RecordIteratorAltPtr it = page.getIteratorAlt();
+
+	if (isDirectoryPage)
+	{
+		bool found = false;
+		bool prevGreaterThanHigh = false;
+		while (true)
+		{
+			it->getCurrent(temp);
+			if (!smallerThanLow()) {
+				int pagePtr = temp->getAtt(1)->toInt();
+				cout << "\nPageptr: " << pagePtr << endl;
+				found = found || discoverPages(pagePtr, list, low, high);
+			}
+			if (greaterThanHigh()) {
+				return found;
+			}
+			if (!it->advance()) {
+				return found;
+			}
+		}
+	}
+	else
+	{
+		while (true)
+		{
+			it->getCurrent(temp);
+			if (!(smallerThanLow() || greaterThanHigh()))
+			{
+				list.push_back(page);
+				return true;
+			}
+			if (!it->advance()) {
+				return false;
+			}
+		}
+	}
 }
 
 void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
@@ -80,17 +174,11 @@ void MyDB_BPlusTreeReaderWriter ::append(MyDB_RecordPtr appendMe)
 			newRoot.append(rptr);
 		}
 	}
-	// cout << "Root location: " << rootLocation << endl;
-	// if (this->operator[](rootLocation).getType() == MyDB_PageType::DirectoryPage) {
-	// 	cout << "Root page is directory" << endl;
-	// }
-	// else {
-	// 	cout << "Root page is regular" << endl;
-	// }
-	if (appendPrintTree) {
+
+	if (appendPrintTree)
+	{
 		printTree();
 	}
-	// printTree();
 }
 
 /**
@@ -152,7 +240,8 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::split(MyDB_PageReaderWriter splitMe,
 		}
 	}
 	// if andMe is the biggest record and not added during the process
-	if (andMeNotAdded) {
+	if (andMeNotAdded)
+	{
 		recordPtrs.push_back(andMe);
 	}
 
@@ -237,7 +326,7 @@ MyDB_RecordPtr MyDB_BPlusTreeReaderWriter ::append(int whichPage, MyDB_RecordPtr
 
 			// when at end of page but still not find the record of key greater than appendMe
 			// the key of the last record of the page must equal to appendMe
-			if (!nodeIt->advance()) 
+			if (!nodeIt->advance())
 			{
 				MyDB_RecordPtr newSplitPage = append(rhs->getPtr(), appendMe);
 
@@ -296,7 +385,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 		string sPage;
 		int numRecords = 0;
 		vector<MyDB_PageReaderWriter> layer;
-		layer.push_back(this->operator[](rootLocation));
+		layer.push_back(this->operator[](32));
 		while (layer.size() != 0)
 		{
 			sLayer = "";
@@ -330,7 +419,7 @@ void MyDB_BPlusTreeReaderWriter ::printTree()
 					{
 						currPageIt->getCurrent(normalRecord);
 						sPage = sPage + "(" + getKey(normalRecord)->toString() + ")|";
-						numRecords ++;
+						numRecords++;
 						if (!currPageIt->advance())
 						{
 							break;
