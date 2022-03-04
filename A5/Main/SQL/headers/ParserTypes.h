@@ -254,6 +254,22 @@ public:
 		}
 	}
 
+	// checkers
+
+	/**
+	 * @brief check if query tables exists in DB
+	 */
+	bool isInTables (map <string, MyDB_TablePtr> tables) {
+		map<string, MyDB_TablePtr>::iterator it;
+		for (auto a : tablesToProcess) {
+			it = tables.find(a.first);
+			if (it == tables.end()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	#include "FriendDecls.h"
 };
 
@@ -298,6 +314,17 @@ public:
 	void printSFWQuery () {
 		myQuery.print ();
 	}
+
+	// checkers
+
+	/**
+	 * @brief check if query tables exists in DB
+	 * 
+	 * @param tables existing tables in DB
+	 */
+	bool isInTables (map <string, MyDB_TablePtr> tables) {
+		return myQuery.isInTables(tables);
+	} 
 
 	#include "FriendDecls.h"
 };
