@@ -10,6 +10,8 @@
 #include "MyDB_Table.h"
 #include <string>
 #include <utility>
+#include <map>
+#include <set>
 
 using namespace std;
 
@@ -204,10 +206,10 @@ struct SFWQuery {
 private:
 
 	// the various parts of the SQL query
-	vector <ExprTreePtr> valuesToSelect;
-	vector <pair <string, string>> tablesToProcess;
-	vector <ExprTreePtr> allDisjunctions;
-	vector <ExprTreePtr> groupingClauses;
+	vector <ExprTreePtr> valuesToSelect; // select
+	vector <pair <string, string>> tablesToProcess; // from
+	vector <ExprTreePtr> allDisjunctions; // where
+	vector <ExprTreePtr> groupingClauses; // group by
 
 public:
 	SFWQuery () {}
@@ -270,6 +272,87 @@ public:
 		return true;
 	}
 
+	/**
+	 * @brief check all attributes exists in table
+	 */
+	bool validAttributes (map <string, MyDB_TablePtr> tables) {
+		map<string, string> tableAlias;
+		for (auto a : tablesToProcess) {
+			tableAlias.insert(pair<string, string>(a.second, a.first)); // alias -> tablename
+		}
+		for (ExprTreePtr v : valuesToSelect) {
+			if (!v->isValidAttribute(tables, tableAlias)) {
+				return false;
+			}
+		}
+		for (ExprTreePtr d : allDisjunctions) {
+			if (!d->isValidAttribute(tables, tableAlias)) {
+				return false;
+			}
+		}
+		for (ExprTreePtr g : groupingClauses) {
+			if (!g->isValidAttribute(tables, tableAlias)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @brief check all arithmetic has valid data types
+	 */
+	bool noMismatchExpressions (map <string, MyDB_TablePtr> tables) {
+		map<string, string> tableAlias;
+		for (auto a : tablesToProcess) {
+			tableAlias.insert(pair<string, string>(a.second, a.first)); // alias -> tablename
+		}
+		// check arithmetic in select
+		for (ExprTreePtr v : valuesToSelect) {
+			if (!v->noMismatchExpressions (tables, tableAlias)) {
+				return false;
+			}
+		}
+		// check compare in where
+		for (ExprTreePtr d : allDisjunctions) {
+			if (!d->noMismatchExpressions (tables, tableAlias)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @brief check the non-aggregate selected attributes are in GROUP BY
+	 */
+	bool validAggregation (map <string, MyDB_TablePtr> tables) {
+		if (groupingClauses.empty()) { // no aggregation term
+			return true;
+		}
+		else {
+			set<string> groupBys;
+			for (ExprTreePtr g : groupingClauses) {
+				string clause = g->toString();
+				if (clause[0] != '[') {
+					cout << "Error: invalid clause to group by: " + clause + "." << endl;
+					return false; // not grouping by identifiers
+				}
+				else {
+					groupBys.insert(clause);
+				}
+			}
+			for (ExprTreePtr v : valuesToSelect) {
+				string clause = v->toString();
+				if (clause[0] == '[') {
+					if (groupBys.find(clause) == groupBys.end()) {
+						cout << "Error: attribute " + clause + " should be aggregated in group by." << endl;
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+	}
+
 	#include "FriendDecls.h"
 };
 
@@ -324,7 +407,28 @@ public:
 	 */
 	bool isInTables (map <string, MyDB_TablePtr> tables) {
 		return myQuery.isInTables(tables);
-	} 
+	}
+
+	/**
+	 * @brief check all attributes exists in table
+	 */
+	bool validAttributes (map <string, MyDB_TablePtr> tables) {
+		return myQuery.validAttributes(tables);
+	}
+
+	/**
+	 * @brief check all arithmetic has valid data types
+	 */
+	bool noMismatchExpressions (map <string, MyDB_TablePtr> tables) {
+		return myQuery.noMismatchExpressions(tables);
+	}
+
+	/**
+	 * @brief check the non-aggregate selected attributes are in GROUP BY
+	 */
+	bool validAggregation (map <string, MyDB_TablePtr> tables) {
+		return myQuery.validAggregation(tables);
+	}
 
 	#include "FriendDecls.h"
 };

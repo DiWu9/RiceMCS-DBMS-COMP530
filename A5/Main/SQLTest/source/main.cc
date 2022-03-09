@@ -160,24 +160,28 @@ int main (int numArgs, char **args) {
 						}	
 
 					} else if (final->isSFWQuery ()) {
-						
-						cout << "check" << endl;
+
+						map <string, MyDB_TablePtr> tables = MyDB_Table :: getAllTables (myCatalog);
+
+						final->printSFWQuery ();
 
 						// all of the referenced tables exist in the database
-						map <string, MyDB_TablePtr> tables = MyDB_Table :: getAllTables (myCatalog);
-						cout << "Print tables in DB: " << endl;
-						for (const auto& entry : tables) {
-							cout << entry.first << endl;
-						}
 						if ( !final->isInTables(tables) ) {
 							cout << "Error: query table not exist in database." << endl;
 						}
-						// no type mismatches in any expressions (no compare between int and text, only + for text)
-
-						// all of the referenced attributes exist, and are correctly attached to the tables that are indicated in the query
-						// in the case of an aggregation query, the only selected attributes (other than the aggregates) must be functions of the grouping attributes
-
-						final->printSFWQuery ();
+						else {
+							// no type mismatches in any expressions (no compare between int and text, only + for text)
+							if ( final->validAttributes(tables) ) {
+								// all of the referenced attributes exist, and are correctly attached to the tables that are indicated in the query
+								if ( final->noMismatchExpressions(tables) ) {
+									// in the case of an aggregation query, the only selected attributes (other than the aggregates) must be functions of the grouping attributes
+									if (final->validAggregation(tables)) {
+										// syntax checking pass
+										cout << "Valid syntax." << endl;
+									}
+								}
+							}
+						}
 					}
 
 					// get outta here

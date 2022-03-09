@@ -1,0 +1,266 @@
+(1)
+Selecting the following:
+        [n_n_name]
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        region AS r
+        nation AS n
+        supplier AS s
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+        == ([l_l_suppkey], [s_s_suppkey])
+        == ([c_c_nationkey], [s_s_nationkey])
+        == ([s_s_nationkey], [n_n_nationkey])
+        == ([n_n_regionkey], [r_r_regionkey])
+        == ([r_r_name], string[region])
+        || (> ([o_o_orderdate], string[date1]), == ([o_o_orderdate], string[date1]))
+        !(< ([o_o_orderdate], string[date2]))
+Group using:
+        [n_n_name]
+Valid syntax.
+
+(2)
+Selecting the following:
+        [n_n_name]
+        [s_s_suppkey]
+        sum([l_l_extendedprice])
+From the following:
+        lineitem AS l
+        supplier AS s
+        nation AS n
+Where the following are true:
+        == ([l_l_suppkey], [s_s_suppkey])
+        == ([s_s_nationkey], [n_n_nationkey])
+Group using:
+        [n_n_name]
+Error: attribute [s_s_suppkey] should be aggregated in group by.
+
+(3)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+Where the following are true:
+        > (* ([l_l_extendedprice], - (int[1], [l_l_discount])), string[a string])
+Group using:
+Error: mismatch expression in greater than operation.
+
+(4)
+Selecting the following:
+        sum(+ ([l_l_returnflag], + ([l_l_shipdate], [l_l_commitdate])))
+From the following:
+        lineitem AS l
+Where the following are true:
+        bool[true]
+Group using:
+Error: mismatch expression in sum().
+
+(5)
+Selecting the following:
+        + ([l_l_returnflag], + ([l_l_shipdate], [l_l_commitdate]))
+From the following:
+        lineitem AS l
+Where the following are true:
+        > ([l_l_shipdate], string[a date])
+Group using:
+Valid syntax.
+
+(6)
+Selecting the following:
+        [n_n_name]
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        region AS r
+        nation AS n
+        supplier AS s
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+        == ([l_l_suppkey], [s_s_suppkey])
+        == ([c_c_nationkey], [s_s_nationkey])
+        == ([s_s_nationkey], [n_n_nationkey])
+        == ([n_n_regionkey], [r_r_regionkey])
+        == ([r_r_name], string[region])
+        || (> (+ ([l_l_tax], [l_l_discount]), string[date2]), == ([o_o_orderdate], string[date1]))
+        !(< ([o_o_orderdate], string[date2]))
+Group using:
+        [n_n_name]
+Error: mismatch expression in greater than operation.
+
+(7)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_k_orderkey])
+Group using:
+Could not find attribute k_orderkey
+Candidates were:
+        o_orderkey
+        o_custkey
+        o_orderstatus
+        o_totalprice
+        o_orderdate
+        o_orderpriority
+        o_clerk
+        o_shippriority
+        o_comment
+Error: no such attribute exists in tableorders.
+
+(8)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [h_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Error: table alias h before the attribute does not exist.
+
+(9)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        > (+ (string[this is a string], string[this is another string]), - (double[15.000000], string[here is another]))
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Error: mismatch expression in greater than operation.
+
+(10)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customers AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Error: query table not exist in database.
+
+(11)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+        == (+ (int[1200], / ([l_l_quantity], + (double[300.000000], int[34]))), int[33])
+Group using:
+Valid syntax.
+
+(12)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        > (+ (string[this is a string], string[this is another string]), string[here is another])
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Valid syntax.
+
+(13)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+        sum(* ([c_l_extendedprice], double[1.010000]))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Could not find attribute l_extendedprice
+Candidates were:
+        c_custkey
+        c_name
+        c_address
+        c_nationkey
+        c_phone
+        c_acctbal
+        c_mktsegment
+        c_comment
+Error: no such attribute exists in tablecustomer.
+
+(14)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        == (+ (string[1204], string[this is a string]), [l_l_returnflag])
+        > (+ ([l_l_tax], + ([l_l_discount], [l_l_extendedprice])), double[3.270000])
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Valid syntax.
+
+(15)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        || (> (+ ([l_l_tax], + ([l_l_discount], [l_l_extendedprice])), double[3.270000]), > (+ ([l_l_discount], [l_l_extendedprice]), string[327]))
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Error: mismatch expression in greater than operation.
+
+(16)
+Selecting the following:
+        sum(* ([l_l_extendedprice], - (int[1], [l_l_discount])))
+        sum(- (int[1], [l_l_discount]))
+From the following:
+        lineitem AS l
+        orders AS o
+        customer AS c
+Where the following are true:
+        == ([c_c_custkey], [o_o_custkey])
+        || (> (+ ([l_l_tax], + ([l_l_discount], [l_l_extendedprice])), double[3.270000]), > (string[here is a string], string[327]))
+        == ([l_l_orderkey], [o_o_orderkey])
+Group using:
+Valid syntax.
+
+(17)
+Selecting the following:
+        sum(+ (int[12], + (double[13.400000], int[19])))
+        sum([l_l_extendedprice])
+From the following:
+        lineitem AS l
+Where the following are true:
+        bool[true]
+Group using:
+Valid syntax.
