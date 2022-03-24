@@ -20,11 +20,18 @@ public:
 	//
 	// Record are read from input, and written to output.
 	//
-	RegularSelection (MyDB_TableReaderWriterPtr input, MyDB_TableReaderWriterPtr output,
-		string selectionPredicate, vector <string> projections);
+	RegularSelection (MyDB_TableReaderWriterPtr inputIn, MyDB_TableReaderWriterPtr outputIn,
+		string selectionPredicateIn, vector <string> projectionsIn);
 	
 	// execute the selection operation
 	void run ();
+
+private:
+
+	MyDB_TableReaderWriterPtr input;
+	MyDB_TableReaderWriterPtr output;
+	string selectionPredicate;
+	vector <string> projections;
 
 };
 

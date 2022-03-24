@@ -24,12 +24,21 @@ public:
 	//
 	// Record are read from input, and written to output.
 	//
-	BPlusSelection (MyDB_BPlusTreeReaderWriterPtr input, MyDB_TableReaderWriterPtr output,
-		MyDB_AttValPtr low, MyDB_AttValPtr high,
-		string selectionPredicate, vector <string> projections);
+	BPlusSelection (MyDB_BPlusTreeReaderWriterPtr inputIn, MyDB_TableReaderWriterPtr outputIn,
+		MyDB_AttValPtr lowIn, MyDB_AttValPtr highIn,
+		string selectionPredicateIn, vector <string> projectionsIn);
 	
 	// execute the selection operation
 	void run ();
+
+private:
+
+	MyDB_BPlusTreeReaderWriterPtr input;
+	MyDB_TableReaderWriterPtr output;
+	MyDB_AttValPtr low;
+	MyDB_AttValPtr high;
+	string selectionPredicate;
+	vector <string> projections;
 
 };
 

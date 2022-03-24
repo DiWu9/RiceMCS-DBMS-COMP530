@@ -214,8 +214,7 @@ int main () {
 		if (res == 2) {
 			/*
 			ScanJoin (MyDB_TableReaderWriterPtr leftInputIn, MyDB_TableReaderWriterPtr rightInputIn,
-                MyDB_TableReaderWriterPtr outputIn, string finalSelectionPredicateIn,
-		vector <string> projectionsIn,
+                MyDB_TableReaderWriterPtr outputIn, string finalSelectionPredicateIn, vector <string> projectionsIn,
                 vector <pair <string, string>> equalityChecksIn, string leftSelectionPredicateIn,
                 string rightSelectionPredicateIn)
 			*/
@@ -226,6 +225,12 @@ int main () {
 			cout << "running join\n";
 			myOp.run ();
 		} else if (res == 1) {
+			/*
+			SortMergeJoin (MyDB_TableReaderWriterPtr leftInput, MyDB_TableReaderWriterPtr rightInput,
+			MyDB_TableReaderWriterPtr output, string finalSelectionPredicate, vector <string> projections,
+			pair <string, string> equalityCheck, string leftSelectionPredicate,
+			string rightSelectionPredicate);
+			*/
 			SortMergeJoin myOp (supplierTableL, supplierTableRNoBPlus, supplierTableOut, 
 				"&& ( == ([l_suppkey], [r_suppkey]), == ([l_name], [r_name]))", projections, 
 				make_pair (string ("[l_suppkey]"), string ("[r_suppkey]")),

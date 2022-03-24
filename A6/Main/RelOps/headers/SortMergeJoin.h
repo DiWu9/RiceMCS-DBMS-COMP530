@@ -24,7 +24,7 @@ public:
 	// rightSelectionPredicate) does not evaluate to true.  
 	//
 	// Next, the pair equalityCheck encodes a pair of computations, taken from the 
-	// predicte finalSelectionPredicate, that must match from the left and the right 
+	// predicate finalSelectionPredicate, that must match from the left and the right 
 	// records, in order for the final record to be accepted by the predicate.
 	// Basically, to run the join, you sort the left relation using equalityCheck.first.
 	// You sort the right relation using equalityCheck.second.  Then you merge them
@@ -33,14 +33,26 @@ public:
 	// Finally, the vector projections contains all of the computations that are
 	// performed to create the output records from the join.
 	//
-	SortMergeJoin (MyDB_TableReaderWriterPtr leftInput, MyDB_TableReaderWriterPtr rightInput,
-		MyDB_TableReaderWriterPtr output, string finalSelectionPredicate, 
-		vector <string> projections,
-		pair <string, string> equalityCheck, string leftSelectionPredicate,
-		string rightSelectionPredicate);
+	SortMergeJoin (MyDB_TableReaderWriterPtr leftInputIn, MyDB_TableReaderWriterPtr rightInputIn,
+		MyDB_TableReaderWriterPtr outputIn, string finalSelectionPredicateIn, 
+		vector <string> projectionsIn, pair <string, string> equalityCheckIn, 
+        string leftSelectionPredicateIn, string rightSelectionPredicateIn);
 	
 	// execute the join
 	void run ();
+
+private:
+
+	string finalSelectionPredicate;
+	string leftSelectionPredicate;
+	string rightSelectionPredicate;
+	pair <string, string> equalityCheck;
+	vector <string> projections;
+	MyDB_TableReaderWriterPtr output;
+	MyDB_TableReaderWriterPtr leftTable;
+	MyDB_TableReaderWriterPtr rightTable;
+	int runSize;
+
 };
 
 #endif
