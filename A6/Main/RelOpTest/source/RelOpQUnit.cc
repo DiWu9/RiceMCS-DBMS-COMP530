@@ -345,6 +345,11 @@ int main () {
 		MyDB_TablePtr aggTable = make_shared <MyDB_Table> ("aggOut", "aggOut.bin", mySchemaOutAgain);
 		MyDB_TableReaderWriterPtr aggTableOut = make_shared <MyDB_TableReaderWriter> (aggTable, myMgr);
 
+		/*
+		Aggregate (MyDB_TableReaderWriterPtr inputIn, MyDB_TableReaderWriterPtr outputIn,
+		vector <pair <MyDB_AggType, string>> aggsToComputeIn,
+		vector <string> groupingsIn, string selectionPredicateIn);
+		*/
 		Aggregate myOpAgain (supplierTableR, aggTableOut, aggsToCompute, groupings, "< ([r_suppkey], int[10])");
 
 		// This basically runs:

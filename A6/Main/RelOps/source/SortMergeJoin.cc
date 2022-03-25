@@ -76,7 +76,7 @@ void SortMergeJoin :: run () {
     // compare records across two tables
 	func leftSmaller = recOut->compileComputation (" < (" + leftSortedBy + ", " + rightSortedBy + ")");
 	func rightSmaller = recOut->compileComputation (" > (" + leftSortedBy + ", " + rightSortedBy + ")");
-    func areEqual = recOut->compileComputation (" = (" + leftSortedBy + ", " + rightSortedBy + ")");
+    func areEqual = recOut->compileComputation (" == (" + leftSortedBy + ", " + rightSortedBy + ")");
 
     // merge phase
     bool hasLeft = leftSelectedIterator->advance();
