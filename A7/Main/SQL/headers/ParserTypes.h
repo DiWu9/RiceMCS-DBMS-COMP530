@@ -246,6 +246,12 @@ public:
 		myQuery.print ();
 	}
 
+	void rmTables () {
+		if (isSFWQuery()) {
+			myQuery.removeTempTables();
+		}
+	}
+
 	#include "FriendDecls.h"
 };
 

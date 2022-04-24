@@ -36,7 +36,109 @@ pair <double, MyDB_StatsPtr> LogicalJoin :: cost () {
 // Note that after the left and right hand sides have been executed, the temporary tables associated with the two 
 // sides should be deleted (via a kill to killFile () on the buffer manager)
 MyDB_TableReaderWriterPtr LogicalJoin :: execute () {
-	return nullptr;
+	cout << "start of LogicalJoin.execute()" << endl;
+	int cnt = 0;
+	int numRecordsToPrint = 30;
+	MyDB_RecordPtr rec;
+	MyDB_RecordIteratorAltPtr iter;
+	/*
+	LogicalOpPtr leftInputOp;
+	LogicalOpPtr rightInputOp;
+	MyDB_TablePtr outputSpec;
+	vector <ExprTreePtr> outputSelectionPredicate;
+	vector <ExprTreePtr> exprsToCompute;
+	*/
+	MyDB_TableReaderWriterPtr leftTable = leftInputOp->execute();
+	rec = leftTable->getEmptyRecord();
+	iter = leftTable->getIteratorAlt();
+	cnt = 0;
+	cout << "Print first " << numRecordsToPrint << " records of left table: " << endl;
+	while (iter->advance()) {
+		iter->getCurrent(rec);
+		cout << cnt << ": " << rec << endl;
+		cnt++;
+		if (cnt > numRecordsToPrint) {
+			break;
+		}
+	}
+	
+	MyDB_TableReaderWriterPtr rightTable = rightInputOp->execute();
+	rec = rightTable->getEmptyRecord();
+	iter = rightTable->getIteratorAlt();
+	cnt = 0;
+	cout << "Print first " << numRecordsToPrint << " records of right table: " << endl;
+	while (iter->advance()) {
+		iter->getCurrent(rec);
+		cout << cnt << ": " << rec << endl;
+		cnt++;
+		if (cnt > numRecordsToPrint) {
+			break;
+		}
+	}
+
+	cout << "start table join ..." << endl;
+	string finalSelectionPredicate = "";
+	pair<string, string> equalityCheck;
+	bool isFirst = true;
+	for (ExprTreePtr exprTree : outputSelectionPredicate) {
+		if (isFirst) {
+			// initialize final selection predicate
+			finalSelectionPredicate = exprTree->toString();
+			// construct equality check
+			string toCompare1 = exprTree->getLHS()->toString();
+			string toCompare2 = exprTree->getRHS()->toString();
+			string lhsAttr, rhsAttr;
+			if (toCompare1.substr(0, toCompare1.find("_")) == leftTableAlias) {
+				lhsAttr = toCompare1;
+				rhsAttr = toCompare2;
+			}
+			else {
+				lhsAttr = toCompare2;
+				rhsAttr = toCompare1;
+			}
+			//cout << "equality check: (LHS)" << lhsAttr << ", (RHS)" << rhsAttr << endl;
+			equalityCheck = make_pair(lhsAttr, rhsAttr);
+			isFirst = false;
+		}
+		else {
+			finalSelectionPredicate = "&& ( " + finalSelectionPredicate + ", " + exprTree->toString() + ")";
+		}
+	}
+	//cout << "final selection predicate: " << endl;
+	//cout << finalSelectionPredicate << endl;
+
+	vector<string> projections;
+	string projection;
+	//cout << "projections: " << endl;
+	for (ExprTreePtr exprTree : exprsToCompute) {
+		projection = exprTree->toString();
+		//cout << projection << endl;
+		projections.push_back(projection);
+	}
+
+
+	// SortMergeJoin (MyDB_TableReaderWriterPtr leftInput, MyDB_TableReaderWriterPtr rightInput,
+	// 	MyDB_TableReaderWriterPtr output, string finalSelectionPredicate, 
+	// 	vector <string> projections,
+	// 	pair <string, string> equalityCheck, string leftSelectionPredicate,
+	// 	string rightSelectionPredicate);
+	MyDB_TableReaderWriterPtr outputTable = make_shared<MyDB_TableReaderWriter>(outputSpec, leftTable->getBufferMgr());
+	SortMergeJoin op(leftTable, rightTable, outputTable, finalSelectionPredicate, projections, equalityCheck, "bool[true]", "bool[true]");
+	op.run();
+	cout << "Record count after LogicalJoin: " << outputTable->getTable()->getTupleCount() << ".\n";
+	rec = outputTable->getEmptyRecord();
+	iter = outputTable->getIteratorAlt();
+	cnt = 0;
+	cout << "Print first " << numRecordsToPrint << " records of the joined table: " << endl;
+	while (iter->advance()) {
+		iter->getCurrent(rec);
+		cout << cnt << ": " << rec << endl;
+		cnt++;
+		if (cnt > numRecordsToPrint) {
+			break;
+		}
+	}
+	return outputTable;
 }
 
 // this costs the table scan returning the compute set of statistics for the output
@@ -51,7 +153,86 @@ pair <double, MyDB_StatsPtr> LogicalTableScan :: cost () {
 // and the selection predicate is handled at the level of the parent (by filtering, for example, the data that is
 // input into a join)
 MyDB_TableReaderWriterPtr LogicalTableScan :: execute () {
-	return nullptr;
+	cout << "start of LogicalTableScan.execute()" << endl;
+
+	MyDB_RecordPtr rec = inputSpec->getEmptyRecord();
+	MyDB_RecordIteratorAltPtr iter = inputSpec->getIteratorAlt();
+	int cnt = 0;
+	int numRecordsToPrint = 30;
+	cout << "Print first " << numRecordsToPrint << " records of input table: " << endl;
+	while (iter->advance()) {
+		iter->getCurrent(rec);
+		cout << cnt << ": " << rec << endl;
+		cnt++;
+		if (cnt > numRecordsToPrint) {
+			break;
+		}
+	}
+	
+	/*
+	MyDB_TableReaderWriterPtr inputSpec;
+	MyDB_TablePtr outputSpec;
+	MyDB_StatsPtr inputStats;
+    vector <ExprTreePtr> selectionPred;
+	vector <string> exprsToCompute;
+	*/
+	string predicate = "";
+	bool isFirst = true;
+	for (ExprTreePtr exp : this->selectionPred) {
+		string selection = exp->toString();
+		if (isFirst) {
+			predicate = selection;
+			isFirst = false;
+		}
+		else {
+			predicate = "&& ( " + predicate + ", " + selection + ")";
+		}
+	}
+
+	// debug
+	//cout << "original predicate: " << endl;
+	//cout << predicate << endl;
+
+	vector<pair<string, MyDB_AttTypePtr>> tableAttrs = inputSpec->getTable()->getSchema()->getAtts();
+	for (auto attr : tableAttrs) {
+		string attrName = this->tableAlias + "_" + attr.first;
+		size_t index = predicate.find(attrName);
+		while (index != string::npos) {
+			predicate.replace(index, attrName.length(), attr.first);
+			index = predicate.find(attrName);
+		}
+	}
+
+	// debug
+	//cout << "modified predicate: " << endl;
+	//cout << predicate << endl;
+	cout << "projections: " << endl;
+	for (string expr : exprsToCompute) {
+		cout << expr << endl;
+	}
+
+	MyDB_TableReaderWriterPtr outputPtr = make_shared<MyDB_TableReaderWriter>(outputSpec, inputSpec->getBufferMgr());
+	
+	// RegularSelection (MyDB_TableReaderWriterPtr input, MyDB_TableReaderWriterPtr output,
+	// 	string selectionPredicate, vector <string> projections);
+	RegularSelection op(inputSpec, outputPtr, predicate, exprsToCompute);
+	op.run();
+
+	cout << "Record count after LogicalTableScan: " << outputPtr->getTable()->getTupleCount() << ".\n";
+	// print stats
+	rec = outputPtr->getEmptyRecord();
+	iter = outputPtr->getIteratorAlt();
+	cnt = 0;
+	cout << "Print first " << numRecordsToPrint << " records of the result table: " << endl;
+	while (iter->advance()) {
+		iter->getCurrent(rec);
+		cout << cnt << ": " << rec << endl;
+		cnt++;
+		if (cnt > numRecordsToPrint) {
+			break;
+		}
+	}
+	return outputPtr;
 }
 
 #endif

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <chrono>
 
 using namespace std;
 string toLower (string data) {
@@ -166,6 +167,35 @@ int main (int numArgs, char **args) {
 						if (myPlan != nullptr) {
 							auto res = myPlan->cost ();
 							cout << "cost was " << res.first << "\n";
+
+							// code added for query execution and execution statistics
+
+							// exec query
+							cout << "execute query: " << endl;
+							auto start = chrono::system_clock::now();
+							MyDB_TableReaderWriterPtr resTable = myPlan->execute();
+							auto end = std::chrono::system_clock::now();
+							
+							// print stats
+							MyDB_RecordPtr rec = resTable->getEmptyRecord();
+							MyDB_RecordIteratorAltPtr iter = resTable->getIteratorAlt();
+							int cnt = 0;
+							int numRecordsToPrint = 30;
+							cout << "Showing " << numRecordsToPrint << " records: \n";
+							while (iter->advance()) {
+								iter->getCurrent(rec);
+								cout << cnt << ": " << rec << endl;
+								cnt++;
+								if (cnt > numRecordsToPrint) {
+									break;
+								}
+							}
+							cout << "Final rec count: " << resTable->getTable()->getTupleCount() << ".\n";
+							
+							chrono::duration<double> diff = end - start;
+							cout << "Query execution time: " << diff.count() << "s" << endl;
+
+							final->rmTables();
 						}
 					}
 

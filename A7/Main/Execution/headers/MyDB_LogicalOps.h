@@ -4,6 +4,10 @@
 
 #include "MyDB_Stats.h"
 #include "MyDB_TableReaderWriter.h"
+#include "BPlusSelection.h"
+#include "RegularSelection.h"
+#include "ScanJoin.h"
+#include "SortMergeJoin.h"
 #include "ExprTree.h"
 
 
@@ -88,9 +92,9 @@ public:
 	//    first attribute in outputSpec, the second item in exprsToComput corresponds to the second attribute, etc.
 	//	
 	LogicalJoin (LogicalOpPtr leftInputOp, LogicalOpPtr rightInputOp, MyDB_TablePtr outputSpec,
-		vector <ExprTreePtr> &outputSelectionPredicate, vector <ExprTreePtr> &exprsToCompute) : leftInputOp (leftInputOp),
+		vector <ExprTreePtr> &outputSelectionPredicate, vector <ExprTreePtr> &exprsToCompute, string leftTableAlias, string rightTableAlias) : leftInputOp (leftInputOp),
 		rightInputOp (rightInputOp), outputSpec (outputSpec), outputSelectionPredicate (outputSelectionPredicate),
-		exprsToCompute (exprsToCompute) {}
+		exprsToCompute (exprsToCompute), leftTableAlias (leftTableAlias), rightTableAlias (rightTableAlias) {}
 			
 	// this costs the entire query plan with the join at the top, returning the compute set of statistics for
 	// the output.  Note that it recursively costs the left and then the right, before using the statistics from
@@ -111,6 +115,8 @@ private:
 	MyDB_TablePtr outputSpec;
 	vector <ExprTreePtr> outputSelectionPredicate;
 	vector <ExprTreePtr> exprsToCompute;
+	string leftTableAlias;
+	string rightTableAlias;
 
 };
 
@@ -133,8 +139,8 @@ public:
 	//    of attributes that we are asking for from a base table
 	//
 	LogicalTableScan (MyDB_TableReaderWriterPtr inputSpec, MyDB_TablePtr outputSpec, MyDB_StatsPtr inputStats, 
-		vector <ExprTreePtr> &selectionPred, vector <string> &exprsToCompute) : inputSpec (inputSpec), outputSpec (outputSpec),
-		inputStats (inputStats), selectionPred (selectionPred), exprsToCompute (exprsToCompute) {}
+		vector <ExprTreePtr> &selectionPred, vector <string> &exprsToCompute, string tableAlias) : inputSpec (inputSpec), outputSpec (outputSpec),
+		inputStats (inputStats), selectionPred (selectionPred), exprsToCompute (exprsToCompute), tableAlias (tableAlias) {}
 
 	// this costs the table scan returning the compute set of statistics for the output
 	pair <double, MyDB_StatsPtr> cost ();
@@ -151,8 +157,9 @@ private:
 	MyDB_TableReaderWriterPtr inputSpec;
 	MyDB_TablePtr outputSpec;
 	MyDB_StatsPtr inputStats;
-        vector <ExprTreePtr> selectionPred;
+    vector <ExprTreePtr> selectionPred;
 	vector <string> exprsToCompute;
+	string tableAlias;
 };
 
 #endif

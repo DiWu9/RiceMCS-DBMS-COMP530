@@ -15,6 +15,7 @@ private:
 	vector <pair <string, string>> tablesToProcess;
 	vector <ExprTreePtr> allDisjunctions;
 	vector <ExprTreePtr> groupingClauses;
+	vector <string> tmpTables;
 
 public:
 	SFWQuery () {}
@@ -37,6 +38,8 @@ public:
 	~SFWQuery () {}
 
 	void print ();
+
+	void removeTempTables ();
 
 	#include "FriendDecls.h"
 };

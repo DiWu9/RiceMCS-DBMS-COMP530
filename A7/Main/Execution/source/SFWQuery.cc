@@ -117,14 +117,26 @@ LogicalOpPtr SFWQuery :: buildLogicalQueryPlan (map <string, MyDB_TablePtr> &all
 	cout << "top schema: " << topSchema << "\n";
 	
 	// and it's time to build the query plan
+	tmpTables.push_back("leftStorageLoc");
+	tmpTables.push_back("rightStorageLoc");
+	/*
+	LogicalTableScan (MyDB_TableReaderWriterPtr inputSpec, MyDB_TablePtr outputSpec, MyDB_StatsPtr inputStats, 
+		vector <ExprTreePtr> &selectionPred, vector <string> &exprsToCompute)
+	*/
 	LogicalOpPtr leftTableScan = make_shared <LogicalTableScan> (allTableReaderWriters[tablesToProcess[0].first], 
 		make_shared <MyDB_Table> ("leftTable", "leftStorageLoc", leftSchema), 
-		make_shared <MyDB_Stats> (leftTable, tablesToProcess[0].second), leftCNF, leftExprs);
+		make_shared <MyDB_Stats> (leftTable, tablesToProcess[0].second), leftCNF, leftExprs, tablesToProcess[0].second);
 	LogicalOpPtr rightTableScan = make_shared <LogicalTableScan> (allTableReaderWriters[tablesToProcess[1].first], 
 		make_shared <MyDB_Table> ("rightTable", "rightStorageLoc", rightSchema), 
-		make_shared <MyDB_Stats> (rightTable, tablesToProcess[1].second), rightCNF, rightExprs);
+		make_shared <MyDB_Stats> (rightTable, tablesToProcess[1].second), rightCNF, rightExprs, tablesToProcess[1].second);
+	
+	tmpTables.push_back("topStorageLoc");
+	/*
+	LogicalJoin (LogicalOpPtr leftInputOp, LogicalOpPtr rightInputOp, MyDB_TablePtr outputSpec,
+		vector <ExprTreePtr> &outputSelectionPredicate, vector <ExprTreePtr> &exprsToCompute)
+	*/
 	LogicalOpPtr returnVal = make_shared <LogicalJoin> (leftTableScan, rightTableScan, 
-		make_shared <MyDB_Table> ("topTable", "topStorageLoc", topSchema), topCNF, valuesToSelect);
+		make_shared <MyDB_Table> ("topTable", "topStorageLoc", topSchema), topCNF, valuesToSelect, tablesToProcess[0].second, tablesToProcess[1].second);
 
 	// done!!
 	return returnVal;
@@ -162,13 +174,19 @@ SFWQuery :: SFWQuery (struct ValueList *selectClause, struct FromList *fromClaus
         struct CNF *cnf) {
         valuesToSelect = selectClause->valuesToCompute;
         tablesToProcess = fromClause->aliases;
-	allDisjunctions = cnf->disjunctions;
+		allDisjunctions = cnf->disjunctions;
 }
 
 SFWQuery :: SFWQuery (struct ValueList *selectClause, struct FromList *fromClause) {
         valuesToSelect = selectClause->valuesToCompute;
         tablesToProcess = fromClause->aliases;
         allDisjunctions.push_back (make_shared <BoolLiteral> (true));
+}
+
+void SFWQuery :: removeTempTables () {
+	for (auto &table : tmpTables) {
+		remove(table.c_str());
+	}
 }
 
 #endif
