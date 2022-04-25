@@ -373,6 +373,9 @@ int main () {
 		MyDB_TablePtr aggTable = make_shared <MyDB_Table> ("aggOut", "aggOut.bin", mySchemaOutAgain);
 		MyDB_TableReaderWriterPtr aggTableOut = make_shared <MyDB_TableReaderWriter> (aggTable, myMgr);
 
+		// Aggregate (MyDB_TableReaderWriterPtr input, MyDB_TableReaderWriterPtr output,
+		// vector <pair <MyDB_AggType, string>> aggsToCompute,
+		// vector <string> groupings, string selectionPredicate);
 		Aggregate myOpAgain (supplierTableR, aggTableOut, aggsToCompute, groupings, "bool [true]");
 
 		// This basically runs:

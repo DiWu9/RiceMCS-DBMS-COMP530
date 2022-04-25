@@ -2,6 +2,7 @@
 #ifndef LOG_OP_CC
 #define LOG_OP_CC
 
+#include "Aggregate.h"
 #include "MyDB_LogicalOps.h"
 
 // fill this out!  This should actually run the aggregation via an appropriate RelOp, and then it is going to
@@ -12,7 +13,55 @@
 // Note that after the left and right hand sides have been executed, the temporary tables associated with the two 
 // sides should be deleted (via a kill to killFile () on the buffer manager)
 MyDB_TableReaderWriterPtr LogicalAggregate :: execute () {
-	return nullptr;
+	// Aggregate (MyDB_TableReaderWriterPtr input, MyDB_TableReaderWriterPtr output,
+	// 	vector <pair <MyDB_AggType, string>> aggsToCompute,
+	// 	vector <string> groupings, string selectionPredicate);
+
+	// LogicalOpPtr inputOp;
+	// MyDB_TablePtr outputSpec;
+	// vector <ExprTreePtr> exprsToCompute;
+	// vector <ExprTreePtr> groupings;
+
+	//return nullptr;
+	MyDB_TableReaderWriterPtr filteredTable = inputOp->execute();
+	MyDB_TableReaderWriterPtr outTable = make_shared<MyDB_TableReaderWriter>(outputSpec, filteredTable->getBufferMgr());
+	vector<pair<MyDB_AggType, string>> aggsToCompute;
+
+	cout << "Print aggregate attributes: " << endl;
+	for (auto e : exprsToCompute) {
+		cout << e->toString() << endl;
+		string agg = e->getChild()->toString();
+		vector<pair<string, MyDB_AttTypePtr>> tableAttrs = filteredTable->getTable()->getSchema()->getAtts();
+		for (auto attr : tableAttrs) {
+			string attrName = this->tableAlias + "_" + attr.first;
+			size_t index = agg.find(attrName);
+			while (index != string::npos) {
+				agg.replace(index, attrName.length(), attr.first);
+				index = agg.find(attrName);
+			}
+		}
+		if (e->isAvg()) {
+			aggsToCompute.push_back(make_pair(MyDB_AggType::avg, agg));
+		}
+		else if (e->isSum()) {
+			aggsToCompute.push_back(make_pair(MyDB_AggType::sum, agg));
+		}
+		else {
+			aggsToCompute.push_back(make_pair(MyDB_AggType::cnt, agg));
+		}
+	}
+
+	cout << "Print grouping attributes: " << endl;
+	vector<string> groupingAttrs;
+	for (auto g : groupings) {
+		cout << g->toString() << endl;
+		groupingAttrs.push_back(g->toString());
+	}
+	
+	Aggregate op(filteredTable, outTable, aggsToCompute, groupingAttrs, "bool[true]");
+	op.run();
+	filteredTable->getBufferMgr()->killTable(filteredTable->getTable());
+	return outTable;
 
 }
 // we don't really count the cost of the aggregate, so cost its subplan and return that
@@ -61,7 +110,7 @@ MyDB_TableReaderWriterPtr LogicalJoin :: execute () {
 			break;
 		}
 	}
-	
+
 	MyDB_TableReaderWriterPtr rightTable = rightInputOp->execute();
 	rec = rightTable->getEmptyRecord();
 	iter = rightTable->getIteratorAlt();
@@ -125,19 +174,20 @@ MyDB_TableReaderWriterPtr LogicalJoin :: execute () {
 	MyDB_TableReaderWriterPtr outputTable = make_shared<MyDB_TableReaderWriter>(outputSpec, leftTable->getBufferMgr());
 	SortMergeJoin op(leftTable, rightTable, outputTable, finalSelectionPredicate, projections, equalityCheck, "bool[true]", "bool[true]");
 	op.run();
-	cout << "Record count after LogicalJoin: " << outputTable->getTable()->getTupleCount() << ".\n";
 	rec = outputTable->getEmptyRecord();
 	iter = outputTable->getIteratorAlt();
 	cnt = 0;
 	cout << "Print first " << numRecordsToPrint << " records of the joined table: " << endl;
 	while (iter->advance()) {
 		iter->getCurrent(rec);
-		cout << cnt << ": " << rec << endl;
 		cnt++;
-		if (cnt > numRecordsToPrint) {
-			break;
+		if (cnt <= numRecordsToPrint) {
+			cout << cnt << ": " << rec << endl;
 		}
 	}
+	cout << "Record count after LogicalJoin: " << cnt << ".\n";
+	leftTable->getBufferMgr()->killTable(leftTable->getTable());
+	rightTable->getBufferMgr()->killTable(rightTable->getTable());
 	return outputTable;
 }
 
@@ -218,7 +268,6 @@ MyDB_TableReaderWriterPtr LogicalTableScan :: execute () {
 	RegularSelection op(inputSpec, outputPtr, predicate, exprsToCompute);
 	op.run();
 
-	cout << "Record count after LogicalTableScan: " << outputPtr->getTable()->getTupleCount() << ".\n";
 	// print stats
 	rec = outputPtr->getEmptyRecord();
 	iter = outputPtr->getIteratorAlt();
@@ -226,12 +275,12 @@ MyDB_TableReaderWriterPtr LogicalTableScan :: execute () {
 	cout << "Print first " << numRecordsToPrint << " records of the result table: " << endl;
 	while (iter->advance()) {
 		iter->getCurrent(rec);
-		cout << cnt << ": " << rec << endl;
 		cnt++;
-		if (cnt > numRecordsToPrint) {
-			break;
+		if (cnt <= numRecordsToPrint) {
+			cout << cnt << ": " << rec << endl;
 		}
 	}
+	cout << "Record count after LogicalTableScan: " << cnt << ".\n";
 	return outputPtr;
 }
 

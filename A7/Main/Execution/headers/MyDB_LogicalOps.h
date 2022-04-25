@@ -51,8 +51,8 @@ public:
 	// groupings: the various GROUP BY computations we need to perform
 	//
 	LogicalAggregate (LogicalOpPtr inputOp, MyDB_TablePtr outputSpec, vector <ExprTreePtr> &exprsToCompute, 
-		vector <ExprTreePtr> &groupings) : inputOp (inputOp), outputSpec (outputSpec), exprsToCompute (exprsToCompute),
-		groupings (groupings) {}
+		vector <ExprTreePtr> &groupings, string tableAlias) : inputOp (inputOp), outputSpec (outputSpec), exprsToCompute (exprsToCompute),
+		groupings (groupings), tableAlias (tableAlias) {}
 	
 	// fill this out!  This should actually run the aggregation via an appropriate RelOp, and then it is going to
 	// have to unscramble the output attributes and compute exprsToCompute using an execution of the RegularSelection 
@@ -72,6 +72,7 @@ private:
 	MyDB_TablePtr outputSpec;
 	vector <ExprTreePtr> exprsToCompute;
 	vector <ExprTreePtr> groupings;
+	string tableAlias;
 
 };
 	

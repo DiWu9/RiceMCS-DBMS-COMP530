@@ -184,13 +184,12 @@ int main (int numArgs, char **args) {
 							cout << "Showing " << numRecordsToPrint << " records: \n";
 							while (iter->advance()) {
 								iter->getCurrent(rec);
-								cout << cnt << ": " << rec << endl;
 								cnt++;
-								if (cnt > numRecordsToPrint) {
-									break;
+								if (cnt <= numRecordsToPrint) {
+									cout << cnt << ": " << rec << endl;
 								}
 							}
-							cout << "Final rec count: " << resTable->getTable()->getTupleCount() << ".\n";
+							cout << "Final rec count: " << cnt << ".\n";
 							
 							chrono::duration<double> diff = end - start;
 							cout << "Query execution time: " << diff.count() << "s" << endl;

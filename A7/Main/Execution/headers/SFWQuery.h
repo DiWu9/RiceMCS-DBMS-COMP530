@@ -41,6 +41,10 @@ public:
 
 	void removeTempTables ();
 
+	ExprTreePtr findAggClause (ExprTreePtr tree);
+
+	MyDB_AttTypePtr getExprType (ExprTreePtr tree, MyDB_TableReaderWriterPtr table);
+
 	#include "FriendDecls.h"
 };
 

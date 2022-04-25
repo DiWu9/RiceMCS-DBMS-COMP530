@@ -659,6 +659,10 @@ public:
 		return child->referencesAtt (alias, attNameToFind);
 	}
 
+	ExprTreePtr getChild () {
+		return child;
+	}
+
 
 	~SumOp () {}
 };
@@ -689,6 +693,10 @@ public:
 
 	bool referencesAtt (string alias, string attNameToFind) {
 		return child->referencesAtt (alias, attNameToFind);
+	}
+
+	ExprTreePtr getChild () {
+		return child;
 	}
 
 	~AvgOp () {}
